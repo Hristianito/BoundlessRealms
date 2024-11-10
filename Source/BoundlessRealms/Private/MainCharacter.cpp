@@ -9,6 +9,8 @@
 #include "InputAction.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Items/Item.h"
+#include "Items/Weapons/Weapon.h"
 
 // Sets default values
 AMainCharacter::AMainCharacter()
@@ -65,6 +67,15 @@ void AMainCharacter::Look(const FInputActionValue& Value)
 	
 }
 
+void AMainCharacter::PickUpItem()
+{
+	if (AWeapon* OverlappingWeapon = Cast<AWeapon>(OverlappingItem)) 
+	{
+		OverlappingWeapon->Equip(GetMesh(), FName("RightHandSocket"));
+		CharacterState = ECharacterState::ECS_EquippedSword;
+	}
+}
+
 // Called every frame
 void AMainCharacter::Tick(float DeltaTime)
 {
@@ -82,6 +93,7 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EnhancedInputComponent->BindAction(MovementAction, ETriggerEvent::Triggered, this, &AMainCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMainCharacter::Look);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(PickUpAction, ETriggerEvent::Triggered, this, &AMainCharacter::PickUpItem);
 	}
 }
 

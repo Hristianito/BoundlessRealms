@@ -13,7 +13,7 @@ void UMainCharacterAnimInstance::NativeInitializeAnimation()
 
 	MainCharacter = Cast<AMainCharacter>(TryGetPawnOwner());
 
-	if (MainCharacter) 
+	if (MainCharacter)
 	{
 		CharacterMovement = MainCharacter->GetCharacterMovement();
 	}
@@ -27,5 +27,6 @@ void UMainCharacterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	{
 		GroundSpeed = UKismetMathLibrary::VSizeXY(CharacterMovement->Velocity);
 		IsFalling = CharacterMovement->IsFalling();
+		CharacterState = MainCharacter->GetCharacterState();
 	}
 }

@@ -5,12 +5,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
+#include "CharacterStates.h"
 #include "MainCharacter.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
+class AItem;
 
 UCLASS()
 class BOUNDLESSREALMS_API AMainCharacter : public ACharacter
@@ -26,6 +28,10 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	FORCEINLINE void SetOverlappingItem(AItem* Item) { OverlappingItem = Item; }
+
+	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
 
 protected:
 	// Called when the game starts or when spawned
@@ -43,13 +49,25 @@ protected:
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* JumpAction;
 
+	UPROPERTY(EditAnywhere, Category = Input)
+	UInputAction* PickUpAction;
+
 	void Move(const FInputActionValue& Value);
+
 	void Look(const FInputActionValue& Value);
 
+	void PickUpItem();
+
 private:
+
+	ECharacterState CharacterState = ECharacterState::ECS_Unequipped;
+
 	UPROPERTY(VisibleAnywhere)
 	USpringArmComponent* SpringArm;
 
 	UPROPERTY(VisibleAnywhere)
 	UCameraComponent* Camera;
+
+	UPROPERTY(VisibleInstanceOnly)
+	AItem* OverlappingItem;
 };

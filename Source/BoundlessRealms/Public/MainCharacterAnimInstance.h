@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "CharacterStates.h"
 #include "MainCharacterAnimInstance.generated.h"
 
 class AMainCharacter;
@@ -16,10 +17,14 @@ class BOUNDLESSREALMS_API UMainCharacterAnimInstance : public UAnimInstance
 	
 public:
 	virtual void NativeInitializeAnimation() override;
+
 	virtual void NativeUpdateAnimation(float DeltaTime) override;
 
 	UPROPERTY(BlueprintReadOnly)
-	AMainCharacter* MainCharacter;
+	AMainCharacter* MainCharacter; 
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	ECharacterState CharacterState;
 
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	UCharacterMovementComponent* CharacterMovement;

@@ -3,6 +3,7 @@
 #include "Items/Item.h"
 #include "BoundlessRealms/DebugMacros.h"
 #include "Components/SphereComponent.h"
+#include "MainCharacter.h"
 
 // Sets default values
 AItem::AItem()
@@ -35,19 +36,17 @@ float AItem::TransformedCos()
 
 void AItem::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	FString OA = OtherActor->GetName();
-	if (GEngine) 
-	{	
-		GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::Red, OA);
+	if (AMainCharacter* MainCharacter = Cast<AMainCharacter>(OtherActor))
+	{
+		MainCharacter->SetOverlappingItem(this);
 	}
 }
 
 void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	FString OA = OtherActor->GetName();
-	if (GEngine)
+	if (AMainCharacter* MainCharacter = Cast<AMainCharacter>(OtherActor))
 	{
-		GEngine->AddOnScreenDebugMessage(2, 1.f, FColor::Blue, OA);
+		MainCharacter->SetOverlappingItem(nullptr);
 	}
 }
 
@@ -55,7 +54,5 @@ void AItem::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	RunningTime += DeltaTime;
-
-	AddActorWorldRotation(FRotator(0.f, RunningTime / 360, 0.f));
 }
 
