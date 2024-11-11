@@ -11,6 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Items/Item.h"
 #include "Items/Weapons/Weapon.h"
+#include "Animation/AnimMontage.h"
 
 // Sets default values
 AMainCharacter::AMainCharacter()
@@ -35,6 +36,7 @@ void AMainCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Add Mapping Contexts
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller)) 
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer())) 
@@ -46,16 +48,19 @@ void AMainCharacter::BeginPlay()
 
 void AMainCharacter::Move(const FInputActionValue& Value)
 {
-	const FVector2D MovementVector = Value.Get<FVector2D>();
+	if (ActionState != EActionState::EAS_Attacking) 
+	{
+		const FVector2D MovementVector = Value.Get<FVector2D>();
 
-	const FRotator ControlRotation = GetControlRotation();
-	const FRotator YawRotation(0.f, ControlRotation.Yaw, 0.f);
+		const FRotator ControlRotation = GetControlRotation();
+		const FRotator YawRotation(0.f, ControlRotation.Yaw, 0.f);
 
-	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	AddMovementInput(ForwardDirection, MovementVector.Y);
+		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		AddMovementInput(ForwardDirection, MovementVector.Y);
 
-	const FVector RigthDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-	AddMovementInput(RigthDirection, MovementVector.X);
+		const FVector RigthDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		AddMovementInput(RigthDirection, MovementVector.X);
+	}
 }
 
 void AMainCharacter::Look(const FInputActionValue& Value)
@@ -76,6 +81,48 @@ void AMainCharacter::PickUpItem()
 	}
 }
 
+void AMainCharacter::Attack()
+{
+	if (CanAttack())
+	{
+		PlayAttackMontage();
+		ActionState = EActionState::EAS_Attacking;
+	}
+}
+
+bool AMainCharacter::CanAttack()
+{
+	return ActionState == EActionState::EAS_Unoccupied && 
+		CharacterState != ECharacterState::ECS_Unequipped;
+}
+
+void AMainCharacter::PlayAttackMontage()
+{
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		AnimInstance->Montage_Play(AttackMontage);
+		const int32 RandomSelectAttack = FMath::RandRange(0, 1);
+		FName SectionName = FName();
+		switch (RandomSelectAttack)
+		{
+		case 0:
+			SectionName = FName("Attack1");
+			break;
+		case 1:
+			SectionName = FName("Attack2");
+			break;
+		default:
+			break;
+		}
+		AnimInstance->Montage_JumpToSection(SectionName, AttackMontage);
+	}
+}
+
+void AMainCharacter::AttackEnd()
+{
+	ActionState = EActionState::EAS_Unoccupied;
+}
+
 // Called every frame
 void AMainCharacter::Tick(float DeltaTime)
 {
@@ -83,7 +130,7 @@ void AMainCharacter::Tick(float DeltaTime)
 
 }
 
-// Called to bind functionality to input
+// Bind functionality to input
 void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -94,6 +141,7 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMainCharacter::Look);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(PickUpAction, ETriggerEvent::Triggered, this, &AMainCharacter::PickUpItem);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &AMainCharacter::Attack);
 	}
 }
 

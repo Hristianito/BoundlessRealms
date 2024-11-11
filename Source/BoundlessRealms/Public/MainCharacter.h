@@ -13,6 +13,7 @@ class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
 class AItem;
+class UAnimMontage;
 
 UCLASS()
 class BOUNDLESSREALMS_API AMainCharacter : public ACharacter
@@ -37,6 +38,19 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	/*
+	* States
+	*/
+	
+	ECharacterState CharacterState = ECharacterState::ECS_Unequipped;
+
+	UPROPERTY(BlueprintReadWrite)
+	EActionState ActionState = EActionState::EAS_Unoccupied;
+
+	/*
+	* Input Actions
+	*/
+
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputMappingContext* MappingContext;
 
@@ -52,15 +66,40 @@ protected:
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* PickUpAction;
 
+	UPROPERTY(EditAnywhere, Category = Input)
+	UInputAction* AttackAction;
+
+	/*
+	* Action Functions
+	*/
+
 	void Move(const FInputActionValue& Value);
 
 	void Look(const FInputActionValue& Value);
 
 	void PickUpItem();
 
-private:
+	void Attack();
 
-	ECharacterState CharacterState = ECharacterState::ECS_Unequipped;
+	bool CanAttack();
+
+	/*
+	* Animation Montages
+	*/
+
+	UPROPERTY(EditDefaultsOnly, Category = Montages)
+	UAnimMontage* AttackMontage;
+
+	/*
+	* Animation Functions
+	*/
+
+	void PlayAttackMontage();
+
+	UFUNCTION(BlueprintCallable)
+	void AttackEnd();
+
+private:
 
 	UPROPERTY(VisibleAnywhere)
 	USpringArmComponent* SpringArm;
