@@ -14,6 +14,7 @@ class UInputMappingContext;
 class UInputAction;
 class AItem;
 class UAnimMontage;
+class AWeapon; 
 
 UCLASS()
 class BOUNDLESSREALMS_API AMainCharacter : public ACharacter
@@ -64,7 +65,7 @@ protected:
 	UInputAction* JumpAction;
 
 	UPROPERTY(EditAnywhere, Category = Input)
-	UInputAction* PickUpAction;
+	UInputAction* EKeyAction;
 
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* AttackAction;
@@ -77,11 +78,19 @@ protected:
 
 	void Look(const FInputActionValue& Value);
 
-	void PickUpItem();
+	void EKeyPressed();
+
+	void PickUpWeapon(AWeapon* OverlappingWeapon);
 
 	void Attack();
 
 	bool CanAttack();
+
+	void EquipUnequip();
+
+	bool CanEquip();
+
+	bool CanUnequip();
 
 	/*
 	* Animation Montages
@@ -90,14 +99,30 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = Montages)
 	UAnimMontage* AttackMontage;
 
+	UPROPERTY(EditDefaultsOnly, Category = Montages)
+	UAnimMontage* EquipUnequipMontage;
+
 	/*
 	* Animation Functions
 	*/
 
 	void PlayAttackMontage();
 
+	void PlayEquipUnequipMontage(FName SectionName);
+
+
+
 	UFUNCTION(BlueprintCallable)
 	void AttackEnd();
+
+	UFUNCTION(BlueprintCallable)
+	void Unequip();
+
+	UFUNCTION(BlueprintCallable)
+	void Equip();
+
+	UFUNCTION(BlueprintCallable)
+	void FinnishedEquipping();
 
 private:
 
@@ -109,4 +134,7 @@ private:
 
 	UPROPERTY(VisibleInstanceOnly)
 	AItem* OverlappingItem;
+
+	UPROPERTY(VisibleAnywhere, Category = "Weapon")
+	AWeapon* CurrentWeapon;
 };

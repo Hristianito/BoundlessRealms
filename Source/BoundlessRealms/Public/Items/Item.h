@@ -33,6 +33,9 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* ItemMesh;
 
+	UPROPERTY(VisibleAnywhere)
+	USphereComponent* Sphere;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sine parameters")
 	float Amplitude = 0.2f;
 
@@ -57,11 +60,9 @@ protected:
 	EItemState ItemState = EItemState::EIS_Hovering;
 
 private:
+
 	UPROPERTY(VisibleInstanceOnly)
 	float RunningTime = 0.f;
-
-	UPROPERTY(VisibleAnywhere)
-	USphereComponent* Sphere;
 };
 
 template<typename T>
