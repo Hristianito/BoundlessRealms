@@ -7,13 +7,14 @@
 #include "Components/BoxComponent.h"
 #include "Components/SceneComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Interfaces/HitInterface.h"
 #include "MainCharacter.h"
 
 AWeapon::AWeapon()
 {
 	WeaponBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Weapon Box"));
 	WeaponBox->SetupAttachment(GetRootComponent());
-	WeaponBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	WeaponBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 	WeaponBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 
@@ -35,10 +36,12 @@ void AWeapon::Equip(USceneComponent* InParent, FName InSocketName)
 {
 	AttachMeshToSocket(InParent, InSocketName);
 	ItemState = EItemState::EIS_Equipped;
+
 	if (FirstEquipSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, FirstEquipSound, GetActorLocation());
 	}
+
 	if (Sphere)
 	{
 		Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -65,9 +68,14 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 {
 	const FVector WeaponStart = BoxTraceStart->GetComponentLocation();
 	const FVector WeaponEnd = BoxTraceEnd->GetComponentLocation();
+
 	TArray<AActor*> ActorsToIgnore;
-	ActorsToIgnore.Add(this);
 	FHitResult HitResult;
+
+	for (AActor* Actor : IgnoreActors)
+	{
+		ActorsToIgnore.AddUnique(Actor);
+	}
 
 	UKismetSystemLibrary::BoxTraceSingle(
 		this,
@@ -78,8 +86,16 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 		ETraceTypeQuery::TraceTypeQuery1,
 		false,
 		ActorsToIgnore,
-		EDrawDebugTrace::ForDuration,
+		EDrawDebugTrace::None,
 		HitResult,
-		true
-	);
+		true);
+
+	if (HitResult.GetActor())
+	{
+		if (IHitInterface* HitInterface = Cast<IHitInterface>(HitResult.GetActor()))
+		{
+			HitInterface->GetHit(HitResult.ImpactPoint);
+		}
+		IgnoreActors.AddUnique(HitResult.GetActor());
+	}
 }

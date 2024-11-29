@@ -5,6 +5,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/BoxComponent.h"
 #include "InputMappingContext.h"
 #include "InputAction.h"
 #include "EnhancedInputComponent.h"
@@ -140,7 +141,9 @@ bool AMainCharacter::CanUnequip()
 
 void AMainCharacter::PlayAttackMontage()
 {
-	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance && AttackMontage)
 	{
 		AnimInstance->Montage_Play(AttackMontage);
 		const int32 RandomSelectAttack = FMath::RandRange(0, 1);
@@ -163,6 +166,7 @@ void AMainCharacter::PlayAttackMontage()
 void AMainCharacter::PlayEquipUnequipMontage(FName SectionName)
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
 	if (AnimInstance && EquipUnequipMontage)
 	{
 		AnimInstance->Montage_Play(EquipUnequipMontage);
@@ -215,6 +219,15 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(EKeyAction, ETriggerEvent::Triggered, this, &AMainCharacter::EKeyPressed);
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &AMainCharacter::Attack);
+	}
+}
+
+void AMainCharacter::SetWeaponCollision(ECollisionEnabled::Type CollisionEnabled)
+{
+	if (CurrentWeapon && CurrentWeapon->GetWeaponBox())
+	{
+		CurrentWeapon->GetWeaponBox()->SetCollisionEnabled(CollisionEnabled);
+		CurrentWeapon->IgnoreActors.Empty();
 	}
 }
 
