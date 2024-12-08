@@ -9,6 +9,7 @@
 class USoundBase;
 class UBoxComponent;
 class USceneComponent;
+class UFieldSystemComponent;
 
 /**
  * 
@@ -37,6 +38,8 @@ protected:
 
 	virtual void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex) override;
 
+	void CreateField(const FVector& FieldLocation);
+
 	UFUNCTION()
 	void OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
@@ -54,5 +57,6 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	USceneComponent* BoxTraceEnd;
 
-	
+	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
+	UFieldSystemComponent* FieldSystem;
 };

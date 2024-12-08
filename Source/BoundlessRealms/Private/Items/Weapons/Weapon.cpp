@@ -9,6 +9,11 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Interfaces/HitInterface.h"
 #include "MainCharacter.h"
+#include "Field/FieldSystemComponent.h"
+#include "Field/FieldSystemObjects.h"
+#include "Field/FieldSystemActor.h"
+#include "Field/FieldSystemTypes.h"
+
 
 AWeapon::AWeapon()
 {
@@ -23,11 +28,21 @@ AWeapon::AWeapon()
 
 	BoxTraceEnd = CreateDefaultSubobject<USceneComponent>(TEXT("Box Trace End"));
 	BoxTraceEnd->SetupAttachment(GetRootComponent());
+
+	FieldSystem = CreateDefaultSubobject<UFieldSystemComponent>(TEXT("Field System"));
+	FieldSystem->SetupAttachment(GetRootComponent());
 }
 
 void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (!FieldSystem)
+	{
+		FieldSystem = NewObject<UFieldSystemComponent>(this, UFieldSystemComponent::StaticClass());
+		FieldSystem->RegisterComponent();
+		FieldSystem->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	}
 
 	WeaponBox->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnBoxOverlap);
 }
@@ -45,6 +60,11 @@ void AWeapon::Equip(USceneComponent* InParent, FName InSocketName)
 	if (Sphere)
 	{
 		Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	if (WeaponBox)
+	{
+		GetWeaponBox()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 }
 
@@ -97,5 +117,34 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 			HitInterface->GetHit(HitResult.ImpactPoint);
 		}
 		IgnoreActors.AddUnique(HitResult.GetActor());
+		CreateField(HitResult.ImpactPoint);
 	}
+}
+
+void AWeapon::CreateField(const FVector& FieldLocation)
+{
+	URadialFalloff* RadialFalloff = NewObject<URadialFalloff>(this);
+	RadialFalloff->Magnitude = 1000000000.0f;  
+	RadialFalloff->Radius = 200.0f;         
+	RadialFalloff->Position = FieldLocation; 
+	RadialFalloff->Falloff = EFieldFalloffType::Field_FallOff_None; 
+
+	URadialVector* RadialVector = NewObject<URadialVector>(this);
+	RadialVector->Magnitude = 5000000000.0f;       
+	RadialVector->Position = FieldLocation;
+
+	UFieldSystemMetaDataFilter* MetaDataFilter = NewObject<UFieldSystemMetaDataFilter>(this);
+	MetaDataFilter->SetMetaDataFilterType(EFieldFilterType::Field_Filter_Dynamic, 
+		EFieldObjectType::Field_Object_Destruction, 
+		EFieldPositionType::Field_Position_CenterOfMass);
+
+	FieldSystem->ApplyPhysicsField(true,
+		EFieldPhysicsType::Field_ExternalClusterStrain,
+		nullptr,
+		RadialFalloff);
+
+	FieldSystem->ApplyPhysicsField(true,
+		EFieldPhysicsType::Field_LinearForce,
+		MetaDataFilter,
+		RadialVector);
 }

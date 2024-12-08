@@ -114,7 +114,9 @@ protected:
 
 	void PlayEquipUnequipMontage(FName SectionName);
 
-
+	/*
+	* Animation Notify Functions
+	*/
 
 	UFUNCTION(BlueprintCallable)
 	void AttackEnd();
