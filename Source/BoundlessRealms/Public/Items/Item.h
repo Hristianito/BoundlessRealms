@@ -7,6 +7,7 @@
 #include "Item.generated.h"
 
 class USphereComponent;
+class UNiagaraComponent;
 
 enum class EItemState : uint8
 {
@@ -58,6 +59,9 @@ protected:
 	virtual void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	EItemState ItemState = EItemState::EIS_Hovering;
+
+	UPROPERTY(EditAnywhere)
+	UNiagaraComponent* ItemGlow;
 
 private:
 

@@ -13,6 +13,7 @@
 #include "Field/FieldSystemObjects.h"
 #include "Field/FieldSystemActor.h"
 #include "Field/FieldSystemTypes.h"
+#include "NiagaraComponent.h"
 
 
 AWeapon::AWeapon()
@@ -65,6 +66,11 @@ void AWeapon::Equip(USceneComponent* InParent, FName InSocketName)
 	if (WeaponBox)
 	{
 		GetWeaponBox()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	if (ItemGlow)
+	{
+		ItemGlow->Deactivate();
 	}
 }
 

@@ -9,7 +9,8 @@
 
 class UGeometryCollectionComponent;
 class USoundBase;
-
+class ATreasure;
+class UCapsuleComponent;
 
 UCLASS()
 class BOUNDLESSREALMS_API ABreakableActor : public AActor, public IHitInterface
@@ -25,9 +26,15 @@ public:
 
 	virtual void GetHit(const FVector& HitLocation) override;
 
+	UFUNCTION(BlueprintCallable)
+	void SpawnTreasure();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UCapsuleComponent* Capsule;
 
 private:
 
@@ -37,4 +44,8 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Breakable Properties")
 	USoundBase* BreakSound;
 
+	UPROPERTY(EditAnywhere)
+	TArray<TSubclassOf<ATreasure>> TreasureClasses;
+
+	bool bBroken = false;
 };

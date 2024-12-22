@@ -4,6 +4,7 @@
 #include "BoundlessRealms/DebugMacros.h"
 #include "Components/SphereComponent.h"
 #include "MainCharacter.h"
+#include "NiagaraComponent.h"
 
 // Sets default values
 AItem::AItem()
@@ -14,6 +15,9 @@ AItem::AItem()
 
 	Sphere = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComponent"));
 	Sphere->SetupAttachment(GetRootComponent());
+
+	ItemGlow = CreateDefaultSubobject<UNiagaraComponent>(TEXT("ItemGlow"));
+	ItemGlow->SetupAttachment(GetRootComponent());
 }
 
 void AItem::BeginPlay()
