@@ -45,6 +45,8 @@ void AMainCharacter::BeginPlay()
 			Subsystem->AddMappingContext(MappingContext, 0);
 		}
 	}
+
+	Tags.Add(FName("MainCharacter"));
 }
 
 void AMainCharacter::Move(const FInputActionValue& Value)
@@ -89,7 +91,7 @@ void AMainCharacter::EKeyPressed()
 
 void AMainCharacter::PickUpWeapon(AWeapon* OverlappingWeapon)
 {
-	OverlappingWeapon->Equip(GetMesh(), FName("RightHandSocket"));
+	OverlappingWeapon->Equip(GetMesh(), FName("RightHandSocket"), this, this);
 	CharacterState = ECharacterState::ECS_EquippedSword;
 	OverlappingItem = nullptr;
 	CurrentWeapon = OverlappingWeapon;
@@ -221,13 +223,3 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &AMainCharacter::Attack);
 	}
 }
-
-void AMainCharacter::SetWeaponCollision(ECollisionEnabled::Type CollisionEnabled)
-{
-	if (CurrentWeapon && CurrentWeapon->GetWeaponBox())
-	{
-		CurrentWeapon->GetWeaponBox()->SetCollisionEnabled(CollisionEnabled);
-		CurrentWeapon->IgnoreActors.Empty();
-	}
-}
-

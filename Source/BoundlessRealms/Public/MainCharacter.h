@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Character.h"
+#include "BaseCharacter.h"
 #include "InputActionValue.h"
 #include "CharacterStates.h"
 #include "MainCharacter.generated.h"
@@ -14,10 +14,9 @@ class UInputMappingContext;
 class UInputAction;
 class AItem;
 class UAnimMontage;
-class AWeapon; 
 
 UCLASS()
-class BOUNDLESSREALMS_API AMainCharacter : public ACharacter
+class BOUNDLESSREALMS_API AMainCharacter : public ABaseCharacter
 {
 	GENERATED_BODY()
 
@@ -30,10 +29,6 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	UFUNCTION(BlueprintCallable)
-	void SetWeaponCollision(ECollisionEnabled::Type CollisionEnabled);
-
 
 	FORCEINLINE void SetOverlappingItem(AItem* Item) { OverlappingItem = Item; }
 
@@ -86,9 +81,9 @@ protected:
 
 	void PickUpWeapon(AWeapon* OverlappingWeapon);
 
-	void Attack();
+	virtual void Attack() override;
 
-	bool CanAttack();
+	virtual bool CanAttack() override;
 
 	void EquipUnequip();
 
@@ -101,16 +96,13 @@ protected:
 	*/
 
 	UPROPERTY(EditDefaultsOnly, Category = Montages)
-	UAnimMontage* AttackMontage;
-
-	UPROPERTY(EditDefaultsOnly, Category = Montages)
 	UAnimMontage* EquipUnequipMontage;
 
 	/*
 	* Animation Functions
 	*/
 
-	void PlayAttackMontage();
+	virtual void PlayAttackMontage() override;
 
 	void PlayEquipUnequipMontage(FName SectionName);
 
@@ -118,8 +110,7 @@ protected:
 	* Animation Notify Functions
 	*/
 
-	UFUNCTION(BlueprintCallable)
-	void AttackEnd();
+	virtual void AttackEnd() override;
 
 	UFUNCTION(BlueprintCallable)
 	void Unequip();
@@ -140,7 +131,4 @@ private:
 
 	UPROPERTY(VisibleInstanceOnly)
 	AItem* OverlappingItem;
-
-	UPROPERTY(VisibleAnywhere, Category = "Weapon")
-	AWeapon* CurrentWeapon;
 };
