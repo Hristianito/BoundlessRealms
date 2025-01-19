@@ -5,6 +5,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/AttributeComponent.h"
 #include "BoundlessRealms/DebugMacros.h"
+#include "Items/Weapons/Weapon.h"
 #include "Animation/AnimMontage.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
@@ -58,6 +59,14 @@ void AEnemy::BeginPlay()
 	{
 		PawnSensing->OnSeePawn.AddDynamic(this, &AEnemy::PawnSeen);
 	}
+
+	UWorld* World = GetWorld();
+	if (World && WeaponClass)
+	{
+		AWeapon* Weapon = World->SpawnActor<AWeapon>(WeaponClass);
+		Weapon->Equip(GetMesh(), FName("RightHandSocket"), this, this);
+		CurrentWeapon = Weapon;
+	}
 }
 
 void AEnemy::MoveToTarget(AActor* Target)
@@ -67,7 +76,7 @@ void AEnemy::MoveToTarget(AActor* Target)
 		FAIMoveRequest MoveRequest;
 
 		MoveRequest.SetGoalActor(Target);
-		MoveRequest.SetAcceptanceRadius(15.f);
+		MoveRequest.SetAcceptanceRadius(50.f);
 
 		EnemyController->MoveTo(MoveRequest);
 	}
@@ -105,6 +114,30 @@ void AEnemy::PlayDeathMontage()
 	}
 }
 
+void AEnemy::PlayAttackMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance && AttackMontage)
+	{
+		AnimInstance->Montage_Play(AttackMontage);
+		const int32 RandomSelectAttack = FMath::RandRange(0, 1);
+		FName SectionName = FName();
+		switch (RandomSelectAttack)
+		{
+		case 0:
+			SectionName = FName("Attack1");
+			break;
+		case 1:
+			SectionName = FName("Attack2");
+			break;
+		default:
+			break;
+		}
+		AnimInstance->Montage_JumpToSection(SectionName, AttackMontage);
+	}
+}
+
 void AEnemy::Death()
 {
 	PlayDeathMontage();
@@ -117,6 +150,11 @@ void AEnemy::Death()
 	{
 		HealthBarWidget->SetVisibility(false);
 	}
+}
+
+void AEnemy::Attack()
+{
+	PlayAttackMontage();
 }
 
 bool AEnemy::InTargetRange(AActor* Target, double Radius)
@@ -229,6 +267,8 @@ void AEnemy::CheckCombatTarget()
 	{
 		EnemyState = EEnemyState::EES_Attacking;
 
+		Attack();
+
 		UE_LOG(LogTemp, Warning, TEXT("Attacking"));
 	}
 }
@@ -285,5 +325,13 @@ float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 	MoveToTarget(CombatTarget);
 
 	return DamageAmount;
+}
+
+void AEnemy::Destroyed()
+{
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->Destroy();
+	}
 }
 

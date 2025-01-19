@@ -10,6 +10,7 @@
 class UHealthBarComponent;
 class UPawnSensingComponent;
 class AAIController;
+class AWeapon;
 
 UCLASS()
 class BOUNDLESSREALMS_API AEnemy : public ABaseCharacter
@@ -34,6 +35,8 @@ public:
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
+	virtual void Destroyed() override;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -56,7 +59,12 @@ protected:
 
 	void PlayDeathMontage();
 
+	virtual void PlayAttackMontage() override;
+
+
 	virtual void Death() override;
+
+	virtual void Attack() override;
 
 	bool InTargetRange(AActor* Target, double Radius);
 
@@ -68,7 +76,7 @@ protected:
 	void PawnSeen(APawn* SeenPawn);
 
 	UPROPERTY(BlueprintReadOnly)
-	EDeathState DeathState = EDeathState::EDS_Alive;
+	EDeathState DeathState;
 
 	UPROPERTY(BlueprintReadOnly)
 	EEnemyState EnemyState = EEnemyState::EES_Patrolling;
@@ -98,6 +106,9 @@ protected:
 
 	UPROPERTY()
 	AAIController* EnemyController;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWeapon> WeaponClass;
 
 private:
 
