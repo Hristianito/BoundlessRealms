@@ -209,7 +209,7 @@ void AEnemy::Tick(float DeltaTime)
 
 	if (IsDead()) return;
 
-	if (IsPatrolling())
+	if (EnemyState > EEnemyState::EES_Patrolling)
 	{
 		CheckCombatTarget();
 	}
