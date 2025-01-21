@@ -42,6 +42,10 @@ protected:
 
 	virtual void Death();
 
+	bool IsAlive();
+
+	virtual void ReceiveDamage(const float Damage);
+
 	/*
 	* Animation Montages
 	*/
@@ -85,4 +89,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "VisualEffects")
 	UParticleSystem* HitParticles;
+
+	void PlayHitSound(const FVector& HitLocation);
+
+	void PlayHitParticles(const FVector& HitLocation);
 };

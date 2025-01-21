@@ -28,12 +28,10 @@ public:
 
 	void CheckCombatTarget();
 
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 	virtual void GetHit(const FVector& HitLocation) override;
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+
 
 	virtual void Destroyed() override;
 
@@ -61,7 +59,6 @@ protected:
 
 	virtual void PlayAttackMontage() override;
 
-
 	virtual void Death() override;
 
 	virtual void Attack() override;
@@ -74,6 +71,8 @@ protected:
 
 	UFUNCTION()
 	void PawnSeen(APawn* SeenPawn);
+
+	void ClearPatrolTimer();
 
 	UPROPERTY(BlueprintReadOnly)
 	EDeathState DeathState;
@@ -109,6 +108,64 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeapon> WeaponClass;
+
+	/*
+	* AI Behaviour
+	*/
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float PatrolSpeed = 125.f;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float ChaseSpeed = 300.f;
+
+	bool IsOutsideCombatRadius();
+
+	bool IsOutsideAttackRadius();
+
+	bool IsInsideAttackRadius();
+
+	bool IsDead();
+
+	bool IsPatrolling();
+
+	bool IsChasing();
+
+	bool IsAttacking();
+
+	bool IsEngaged();
+
+	void ShowHealthBar();
+
+	void HideHealthBar();
+
+	void SetHealthBarPercent();
+
+	void LoseInterest();
+
+	void StartPatrolling();
+
+	void StartChasing();
+
+	void StartAttacking();
+
+	/*
+	* Combat
+	*/
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float AttackTimerMin = 0.5;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float AttackTimerMax = 1.0;
+
+	FTimerHandle AttackTimer;
+
+	void ClearAttackTimer();
+
+	virtual bool CanAttack() override;
+
+	virtual void ReceiveDamage(const float Damage) override;
 
 private:
 
