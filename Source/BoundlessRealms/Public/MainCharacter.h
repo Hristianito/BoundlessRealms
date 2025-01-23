@@ -102,8 +102,6 @@ protected:
 	* Animation Functions
 	*/
 
-	virtual void PlayAttackMontage() override;
-
 	void PlayEquipUnequipMontage(FName SectionName);
 
 	/*

@@ -78,71 +78,32 @@ void AEnemy::MoveToTarget(AActor* Target)
 	}
 }
 
-void AEnemy::PlayDeathMontage()
+int32 AEnemy::PlayDeathMontage()
 {
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance && DeathMontage)
-	{
-		AnimInstance->Montage_Play(DeathMontage);
+	const int32 Selection = Super::PlayDeathMontage();
 
-		const int32 RandomSelectDeath = FMath::RandRange(0, 2);
-		FName SectionName = FName();
+	TEnumAsByte<EDeathState> State(Selection);
 
-		switch (RandomSelectDeath)
-		{
-		case 0:
-			SectionName = FName("Death1");
-			DeathState = EDeathState::EDS_Death1;
-			break;
-		case 1:
-			SectionName = FName("Death2");
-			DeathState = EDeathState::EDS_Death2;
-			break;
-		case 2:
-			SectionName = FName("Death3");
-			break;
-			DeathState = EDeathState::EDS_Death3;
-		default:
-			break;
-		}
+	if (State < EDeathState::EDS_MAX) DeathState = State;
 
-		AnimInstance->Montage_JumpToSection(SectionName, DeathMontage);
-	}
-}
-
-void AEnemy::PlayAttackMontage()
-{
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-
-	if (AnimInstance && AttackMontage)
-	{
-		AnimInstance->Montage_Play(AttackMontage);
-		const int32 RandomSelectAttack = FMath::RandRange(0, 1);
-		FName SectionName = FName();
-		switch (RandomSelectAttack)
-		{
-		case 0:
-			SectionName = FName("Attack1");
-			break;
-		case 1:
-			SectionName = FName("Attack2");
-			break;
-		default:
-			break;
-		}
-		AnimInstance->Montage_JumpToSection(SectionName, AttackMontage);
-	}
+	return Selection;
 }
 
 void AEnemy::Death()
 {
+	EnemyState = EEnemyState::EES_Dead;
+
 	PlayDeathMontage();
 
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ClearAttackTimer();
 
-	SetLifeSpan(3.f);
+	DisableCapsuleCollision();
+
+	SetLifeSpan(DeathLifeSpan);
 
 	HideHealthBar();
+
+	GetCharacterMovement()->bOrientRotationToMovement = false;
 }
 
 void AEnemy::Attack()

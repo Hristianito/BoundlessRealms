@@ -141,30 +141,6 @@ bool AMainCharacter::CanUnequip()
 		CharacterState != ECharacterState::ECS_Unequipped;
 }
 
-void AMainCharacter::PlayAttackMontage()
-{
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-
-	if (AnimInstance && AttackMontage)
-	{
-		AnimInstance->Montage_Play(AttackMontage);
-		const int32 RandomSelectAttack = FMath::RandRange(0, 1);
-		FName SectionName = FName();
-		switch (RandomSelectAttack)
-		{
-		case 0:
-			SectionName = FName("Attack1");
-			break;
-		case 1:
-			SectionName = FName("Attack2");
-			break;
-		default:
-			break;
-		}
-		AnimInstance->Montage_JumpToSection(SectionName, AttackMontage);
-	}
-}
-
 void AMainCharacter::PlayEquipUnequipMontage(FName SectionName)
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();

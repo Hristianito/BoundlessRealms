@@ -55,11 +55,10 @@ protected:
 	* Animation Functions
 	*/
 
-	void PlayDeathMontage();
-
-	virtual void PlayAttackMontage() override;
+	virtual int32 PlayDeathMontage() override;
 
 	virtual void Death() override;
+
 
 	virtual void Attack() override;
 
@@ -75,7 +74,7 @@ protected:
 	void ClearPatrolTimer();
 
 	UPROPERTY(BlueprintReadOnly)
-	EDeathState DeathState;
+	TEnumAsByte<EDeathState> DeathState;
 
 	UPROPERTY(BlueprintReadOnly)
 	EEnemyState EnemyState = EEnemyState::EES_Patrolling;
@@ -158,6 +157,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	float AttackTimerMax = 1.0;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float DeathLifeSpan = 5.f;
 
 	FTimerHandle AttackTimer;
 
