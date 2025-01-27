@@ -74,7 +74,6 @@ void AEnemy::GetHit(const FVector& HitLocation)
 	else if (!IsAlive()) Death();
 
 	PlayHitSound(HitLocation);
-
 	PlayHitParticles(HitLocation);
 }
 
@@ -85,6 +84,7 @@ void AEnemy::BeginPlay()
 	if (PawnSensing) PawnSensing->OnSeePawn.AddDynamic(this, &AEnemy::PawnSeen);
 
 	InitializeEnemy();
+	Tags.Add(FName("Enemy"));
 }
 
 bool AEnemy::CanAttack()
@@ -101,6 +101,8 @@ void AEnemy::Attack()
 
 void AEnemy::AttackEnd()
 {
+	Super::AttackEnd();
+
 	EnemyState = EEnemyState::EES_NoState;
 
 	CheckCombatTarget();
@@ -118,22 +120,16 @@ void AEnemy::Death()
 	EnemyState = EEnemyState::EES_Dead;
 
 	PlayDeathMontage();
-
 	ClearAttackTimer();
-
 	DisableCapsuleCollision();
-
 	SetLifeSpan(DeathLifeSpan);
-
 	HideHealthBar();
-
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 }
 
 int32 AEnemy::PlayDeathMontage()
 {
 	const int32 Selection = Super::PlayDeathMontage();
-
 	TEnumAsByte<EDeathState> State(Selection);
 
 	if (State < EDeathState::EDS_MAX) DeathState = State;
@@ -192,9 +188,7 @@ void AEnemy::InitializeEnemy()
 {
 	EnemyController = Cast<AAIController>(GetController());
 	MoveToTarget(PatrolTarget);
-
 	HideHealthBar();
-
 	SpawnDefaultWeapon();
 }
 
@@ -214,9 +208,7 @@ void AEnemy::CheckPatrolTarget()
 	if (InTargetRange(PatrolTarget, PatrolRadius))
 	{
 		PatrolTarget = ChoosePatrolTarget();
-
 		const float RandomWaitTime = FMath::RandRange(PatrolWaitMin, PatrolWaitMax);
-
 		GetWorldTimerManager().SetTimer(PatrolTimer, this, &AEnemy::PatrolTimerFinished, RandomWaitTime);
 	}
 }
@@ -226,7 +218,6 @@ void AEnemy::CheckCombatTarget()
 	if (IsOutsideCombatRadius() && !IsPatrolling())
 	{
 		ClearAttackTimer();
-
 		LoseInterest();
 
 		if (!IsEngaged()) StartPatrolling();
@@ -248,7 +239,6 @@ void AEnemy::StartPatrolling()
 	EnemyState = EEnemyState::EES_Patrolling;
 
 	GetCharacterMovement()->MaxWalkSpeed = PatrolSpeed;
-
 	MoveToTarget(PatrolTarget);
 }
 
@@ -257,10 +247,9 @@ void AEnemy::StartChasing()
 	EnemyState = EEnemyState::EES_Chasing;
 
 	GetCharacterMovement()->MaxWalkSpeed = ChaseSpeed;
-
 	ShowHealthBar();
-
 	MoveToTarget(CombatTarget);
+	ClearPatrolTimer();
 }
 
 void AEnemy::StartAttacking()
@@ -268,14 +257,12 @@ void AEnemy::StartAttacking()
 	EnemyState = EEnemyState::EES_Attacking;
 
 	const float RandomWaitTime = FMath::RandRange(AttackTimerMin, AttackTimerMax);
-
 	GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemy::Attack, RandomWaitTime);
 }
 
 void AEnemy::LoseInterest()
 {
 	CombatTarget = nullptr;
-
 	HideHealthBar();
 }
 
@@ -308,10 +295,8 @@ void AEnemy::MoveToTarget(AActor* Target)
 	if (EnemyController && Target)
 	{
 		FAIMoveRequest MoveRequest;
-
 		MoveRequest.SetGoalActor(Target);
 		MoveRequest.SetAcceptanceRadius(50.f);
-
 		EnemyController->MoveTo(MoveRequest);
 	}
 }
@@ -358,10 +343,7 @@ void AEnemy::PawnSeen(APawn* SeenPawn)
 
 	if (ShouldChase)
 	{	
-		ClearPatrolTimer();
-
 		CombatTarget = SeenPawn;
-		
 		StartChasing();
 	}
 }

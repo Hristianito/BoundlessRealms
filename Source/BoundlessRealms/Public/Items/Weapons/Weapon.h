@@ -29,16 +29,13 @@ public:
 
 	TArray<AActor*> IgnoreActors;
 
+	bool bCanTrace = true;
+
 protected:
 	
 	// <AActor>
 	virtual void BeginPlay() override;
 	// </AActor>
-
-	// <AItem>
-	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
-	virtual void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex) override;
-	// </AItem>
 
 	UFUNCTION()
 	void OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -51,9 +48,10 @@ private:
 	void DisableBoxCollision();
 	void DeactivateGlow();
 
-	// On Overlap
+	// On Box Overlap
+	bool SameActorTypeHit(AActor* ThisActor,AActor* OtherActor);
+	void BoxTrace(FHitResult& HitResult);
 	void AddUniqueActorsToIgnore(TArray<AActor*, FDefaultAllocator>& ActorsToIgnore);
-	void BoxTrace(const FVector& WeaponStart, const FVector& WeaponEnd, TArray<AActor*, FDefaultAllocator>& ActorsToIgnore, FHitResult& HitResult);
 	void Hit(FHitResult& HitResult);
 	void ApplyDamage(FHitResult& HitResult);
 	void GetHit(FHitResult& HitResult);
@@ -78,9 +76,15 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	USceneComponent* BoxTraceEnd;
 
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	FVector BoxTraceExtent = FVector(5.f);
+
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	UFieldSystemComponent* FieldSystem;
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float Damage = 20.f;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	bool bShowBoxDebug = false;
 };

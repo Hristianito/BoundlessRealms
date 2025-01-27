@@ -30,6 +30,10 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// </ACharacter>
 
+	// <IHitInterface>
+	virtual void GetHit(const FVector& HitLocation) override;
+	// </IHitInterface>
+
 	FORCEINLINE void SetOverlappingItem(AItem* Item) { OverlappingItem = Item; }
 
 	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }

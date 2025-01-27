@@ -1,7 +1,9 @@
 #include "MainCharacter.h"	
 #include "GameFramework/SpringArmComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "InputMappingContext.h"
 #include "InputAction.h"
 #include "EnhancedInputComponent.h"
@@ -17,6 +19,15 @@ AMainCharacter::AMainCharacter()
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
 	bUseControllerRotationYaw = false;
+
+	GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
+	GetMesh()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
+	GetMesh()->SetGenerateOverlapEvents(true);
+
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 400.f, 0.f);
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(GetRootComponent());
@@ -43,6 +54,12 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EnhancedInputComponent->BindAction(EKeyAction, ETriggerEvent::Triggered, this, &AMainCharacter::EKeyPressed);
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &AMainCharacter::Attack);
 	}
+}
+
+void AMainCharacter::GetHit(const FVector& HitLocation)
+{
+	PlayHitSound(HitLocation);
+	PlayHitParticles(HitLocation);
 }
 
 void AMainCharacter::BeginPlay()
@@ -78,6 +95,8 @@ void AMainCharacter::Attack()
 
 void AMainCharacter::AttackEnd()
 {
+	Super::AttackEnd();
+
 	ActionState = EActionState::EAS_Unoccupied;
 }
 

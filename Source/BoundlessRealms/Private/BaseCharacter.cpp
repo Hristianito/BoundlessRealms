@@ -64,6 +64,7 @@ void ABaseCharacter::DirectionalHitReact(const FVector& HitLocation)
 
 void ABaseCharacter::AttackEnd()
 {
+	CurrentWeapon->bCanTrace = true;
 }
 
 void ABaseCharacter::SetWeaponCollision(ECollisionEnabled::Type CollisionEnabled)
