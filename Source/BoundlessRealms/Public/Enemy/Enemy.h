@@ -62,6 +62,8 @@ private:
 	bool IsChasing();
 	bool IsAttacking();
 	bool IsEngaged();
+	void InitializeEnemy();
+	void SpawnDefaultWeapon();
 	void CheckPatrolTarget();
 	void CheckCombatTarget();
 	void StartPatrolling();

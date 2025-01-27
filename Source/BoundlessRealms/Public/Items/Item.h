@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -18,36 +16,21 @@ enum class EItemState : uint8
 UCLASS()
 class BOUNDLESSREALMS_API AItem : public AActor
 {
-
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this actor's properties
+
 	AItem();
-	// Called every frame
+
+	// <AActor>
 	virtual void Tick(float DeltaTime) override;
+	// </AActor>
 
 protected:
-	// Called when the game starts or when spawned
+
+	// <AActor>
 	virtual void BeginPlay() override;
-
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* ItemMesh;
-
-	UPROPERTY(VisibleAnywhere)
-	USphereComponent* Sphere;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sine parameters")
-	float Amplitude = 0.2f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sine parameters")
-	float Time = 5.f;
-
-	UFUNCTION(BlueprintPure)
-	float TransformedSin();
-
-	UFUNCTION(BlueprintPure)
-	float TransformedCos();
+	// </AActor>
 
 	template<typename T>
 	T Avg(T first, T second);
@@ -58,10 +41,28 @@ protected:
 	UFUNCTION()
 	virtual void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-	EItemState ItemState = EItemState::EIS_Hovering;
+	UFUNCTION(BlueprintPure)
+	float TransformedSin();
+
+	UFUNCTION(BlueprintPure)
+	float TransformedCos();
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* ItemMesh;
+
+	UPROPERTY(VisibleAnywhere)
+	USphereComponent* Sphere;
 
 	UPROPERTY(EditAnywhere)
 	UNiagaraComponent* ItemGlow;
+
+	EItemState ItemState = EItemState::EIS_Hovering;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sine parameters")
+	float Amplitude = 0.2f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sine parameters")
+	float Time = 5.f;
 
 private:
 

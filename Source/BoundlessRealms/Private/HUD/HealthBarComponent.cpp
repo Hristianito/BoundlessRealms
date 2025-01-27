@@ -16,5 +16,4 @@ void UHealthBarComponent::SetHealthPercent(float Percent)
 	{
 		HealthBarWidget->HealthBar->SetPercent(Percent);
 	}
-
 }

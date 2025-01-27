@@ -1,18 +1,11 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Breakable/BreakableActor.h"
 #include "GeometryCollection/GeometryCollectionComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Items/Treasure.h"
 #include "Components/CapsuleComponent.h"
 
-
-
-// Sets default values
 ABreakableActor::ABreakableActor()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
 	GeometryCollection = CreateDefaultSubobject<UGeometryCollectionComponent>(TEXT("GeometryCollection"));
@@ -27,49 +20,48 @@ ABreakableActor::ABreakableActor()
 	Capsule->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Block);
 }
 
-// Called when the game starts or when spawned
-void ABreakableActor::BeginPlay()
-{
-	Super::BeginPlay();
-
-}
-
-// Called every frame
-void ABreakableActor::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
 void ABreakableActor::GetHit(const FVector& HitLocation)
 {
 	if (bBroken) return;
 
 	bBroken = true;
 
-	if (BreakSound)
+	PlayBreakSound();
+}
+
+void ABreakableActor::SpawnTreasureRandomly()
+{
+	int32 RandonDropValue = FMath::RandRange(1, 100);
+
+	if (RandonDropValue < DropPercentage)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, BreakSound, GetActorLocation());
+		SpawnTreasure();
 	}
+}
+
+bool ABreakableActor::CanSpawnTreasure(UWorld* World)
+{
+	return World && TreasureClasses.Num() > 0;
 }
 
 void ABreakableActor::SpawnTreasure()
 {
 	UWorld* World = GetWorld();
 
-	if (World && TreasureClasses.Num() > 0)
+	if (CanSpawnTreasure(World))
 	{
 		FVector Location = GetActorLocation();
 		Location.Z += 75.f;
 
-		int32 ShouldDrop = FMath::RandRange(0, 1);
-
-		if (ShouldDrop == 1)
-		{
-			int32 Selection = FMath::RandRange(0, TreasureClasses.Num() - 1);
-
-			World->SpawnActor<ATreasure>(TreasureClasses[Selection], Location, GetActorRotation());
-		}
+		int32 Selection = FMath::RandRange(0, TreasureClasses.Num() - 1);
+		World->SpawnActor<ATreasure>(TreasureClasses[Selection], Location, GetActorRotation());
 	}
 }
 
+void ABreakableActor::PlayBreakSound()
+{
+	if (BreakSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, BreakSound, GetActorLocation());
+	}
+}

@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Items/Treasure.h"
 #include "MainCharacter.h"
 #include "Kismet/GameplayStatics.h"
@@ -9,11 +6,16 @@ void ATreasure::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 {
 	if (AMainCharacter* MainCharacter = Cast<AMainCharacter>(OtherActor))
 	{
-		if (TreasurePickupSound)
-		{
-			UGameplayStatics::PlaySoundAtLocation(this, TreasurePickupSound, GetActorLocation());
-		}
+		PlayTreasurePickupSound();
 
 		Destroy();
+	}
+}
+
+void ATreasure::PlayTreasurePickupSound()
+{
+	if (TreasurePickupSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, TreasurePickupSound, GetActorLocation());
 	}
 }

@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -18,34 +16,38 @@ class BOUNDLESSREALMS_API ABreakableActor : public AActor, public IHitInterface
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
+
 	ABreakableActor();
 
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
+	// <IHitInterface>
 	virtual void GetHit(const FVector& HitLocation) override;
-
-	UFUNCTION(BlueprintCallable)
-	void SpawnTreasure();
+	// </IHitInterface>
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintCallable)
+	void SpawnTreasureRandomly();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	UCapsuleComponent* Capsule;
 
 private:
 
-	UPROPERTY(VisibleAnywhere)
-	UGeometryCollectionComponent* GeometryCollection;
+	bool CanSpawnTreasure(UWorld* World);
+	void SpawnTreasure();
+	void PlayBreakSound();
 
 	UPROPERTY(EditAnywhere, Category = "Breakable Properties")
 	USoundBase* BreakSound;
+
+	UPROPERTY(VisibleAnywhere)
+	UGeometryCollectionComponent* GeometryCollection;
 
 	UPROPERTY(EditAnywhere)
 	TArray<TSubclassOf<ATreasure>> TreasureClasses;
 
 	bool bBroken = false;
+
+	UPROPERTY(EditAnywhere)
+	int32 DropPercentage = 50;
 };

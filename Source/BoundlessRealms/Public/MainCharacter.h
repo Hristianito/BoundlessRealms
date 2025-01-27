@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -21,35 +19,60 @@ class BOUNDLESSREALMS_API AMainCharacter : public ABaseCharacter
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
+
 	AMainCharacter();
 
-	// Called every frame
+	// <AActor>
 	virtual void Tick(float DeltaTime) override;
+	// </AActor>
 
-	// Called to bind functionality to input
+	// <ACharacter>
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	// </ACharacter>
 
 	FORCEINLINE void SetOverlappingItem(AItem* Item) { OverlappingItem = Item; }
 
 	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
 
-	/*
-	* States
-	*/
-	
-	ECharacterState CharacterState = ECharacterState::ECS_Unequipped;
+	// <AActor>
+	virtual void BeginPlay() override;
+	// </AActor>
+
+	// <ABaseCharacter>
+	virtual bool CanAttack() override;
+	virtual void Attack() override;
+	virtual void AttackEnd() override;
+	// </ABaseCharacter>
+
+	UFUNCTION(BlueprintCallable)
+	void AttachWeaponToHand();
+
+	UFUNCTION(BlueprintCallable)
+	void FinnishedAttachingToHand();
+
+	UFUNCTION(BlueprintCallable)
+	void AttachWeaponToBack();
 
 	UPROPERTY(BlueprintReadWrite)
 	EActionState ActionState = EActionState::EAS_Unoccupied;
 
-	/*
-	* Input Actions
-	*/
+private:
+
+	// Input
+	void Move(const FInputActionValue& Value);
+	void Look(const FInputActionValue& Value);
+	void EKeyPressed();
+
+	// Weapon Equipping
+	bool CanEquip();
+	bool CanUnequip();
+	void PickUpWeapon(AWeapon* OverlappingWeapon);
+	void EquipUnequip();
+	void Equip();
+	void Unequip();
+	void PlayEquipUnequipMontage(FName SectionName);
 
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputMappingContext* MappingContext;
@@ -69,58 +92,6 @@ protected:
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* AttackAction;
 
-	/*
-	* Action Functions
-	*/
-
-	void Move(const FInputActionValue& Value);
-
-	void Look(const FInputActionValue& Value);
-
-	void EKeyPressed();
-
-	void PickUpWeapon(AWeapon* OverlappingWeapon);
-
-	virtual void Attack() override;
-
-	virtual bool CanAttack() override;
-
-	void EquipUnequip();
-
-	bool CanEquip();
-
-	bool CanUnequip();
-
-	/*
-	* Animation Montages
-	*/
-
-	UPROPERTY(EditDefaultsOnly, Category = Montages)
-	UAnimMontage* EquipUnequipMontage;
-
-	/*
-	* Animation Functions
-	*/
-
-	void PlayEquipUnequipMontage(FName SectionName);
-
-	/*
-	* Animation Notify Functions
-	*/
-
-	virtual void AttackEnd() override;
-
-	UFUNCTION(BlueprintCallable)
-	void Unequip();
-
-	UFUNCTION(BlueprintCallable)
-	void Equip();
-
-	UFUNCTION(BlueprintCallable)
-	void FinnishedEquipping();
-
-private:
-
 	UPROPERTY(VisibleAnywhere)
 	USpringArmComponent* SpringArm;
 
@@ -129,4 +100,10 @@ private:
 
 	UPROPERTY(VisibleInstanceOnly)
 	AItem* OverlappingItem;
+
+	UPROPERTY(EditDefaultsOnly, Category = Montages)
+	UAnimMontage* EquipUnequipMontage;
+
+	ECharacterState CharacterState = ECharacterState::ECS_Unequipped;
+
 };

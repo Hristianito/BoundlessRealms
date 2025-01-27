@@ -1,23 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Components/AttributeComponent.h"
 
-// Sets default values for this component's properties
 UAttributeComponent::UAttributeComponent()
 {
-	PrimaryComponentTick.bCanEverTick = true;
-}
-
-
-void UAttributeComponent::ReceiveDamage(float Damage)
-{
-	Health = FMath::Clamp(Health - Damage, 0, MaxHealth);
-}
-
-float UAttributeComponent::GetHealthPercent() const
-{
-	return Health / MaxHealth;
+	PrimaryComponentTick.bCanEverTick = false;
 }
 
 bool UAttributeComponent::IsAlive() const
@@ -25,17 +10,12 @@ bool UAttributeComponent::IsAlive() const
 	return Health > 0.f;
 }
 
-// Called when the game starts
-void UAttributeComponent::BeginPlay()
+float UAttributeComponent::GetHealthPercent() const
 {
-	Super::BeginPlay();
-	
-} 
-
-// Called every frame
-void UAttributeComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
+	return Health / MaxHealth;
 }
 
+void UAttributeComponent::ReceiveDamage(float Damage)
+{
+	Health = FMath::Clamp(Health - Damage, 0, MaxHealth);
+}

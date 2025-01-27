@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "BaseCharacter.h"
 #include "Animation/AnimMontage.h"
 #include "Items/Weapons/Weapon.h"
@@ -9,10 +6,8 @@
 #include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
 
-// Sets default values
 ABaseCharacter::ABaseCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	Attributes = CreateDefaultSubobject<UAttributeComponent>(TEXT("Attributes"));
@@ -22,15 +17,23 @@ ABaseCharacter::ABaseCharacter()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 }
 
-// Called when the game starts or when spawned
+void ABaseCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+}
+
+void ABaseCharacter::GetHit(const FVector& HitLocation)
+{
+}
+
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
-void ABaseCharacter::Attack()
+bool ABaseCharacter::IsAlive()
 {
+	return Attributes && Attributes->IsAlive();
 }
 
 bool ABaseCharacter::CanAttack()
@@ -38,13 +41,8 @@ bool ABaseCharacter::CanAttack()
 	return false;
 }
 
-void ABaseCharacter::Death()
+void ABaseCharacter::Attack()
 {
-}
-
-bool ABaseCharacter::IsAlive()
-{
-	return Attributes && Attributes->IsAlive();
 }
 
 void ABaseCharacter::ReceiveDamage(const float Damage)
@@ -55,9 +53,98 @@ void ABaseCharacter::ReceiveDamage(const float Damage)
 	}
 }
 
+void ABaseCharacter::Death()
+{
+}
+
+void ABaseCharacter::DirectionalHitReact(const FVector& HitLocation)
+{
+	PlayHitReactionMontage(SelectHitMontageSection(HitLocation));
+}
+
+void ABaseCharacter::AttackEnd()
+{
+}
+
+void ABaseCharacter::SetWeaponCollision(ECollisionEnabled::Type CollisionEnabled)
+{
+	if (CurrentWeapon && CurrentWeapon->GetWeaponBox())
+	{
+		CurrentWeapon->GetWeaponBox()->SetCollisionEnabled(CollisionEnabled);
+		CurrentWeapon->IgnoreActors.Empty();
+	}
+}
+
+int32 ABaseCharacter::PlayAttackMontage()
+{
+	return PlayRandomSectionFromMontage(AttackMontage, AttackMontageSections);
+}
+
+int32 ABaseCharacter::PlayDeathMontage()
+{
+	return PlayRandomSectionFromMontage(DeathMontage, DeathMontageSections);
+}
+
+void ABaseCharacter::PlayHitReactionMontage(const FName& SectionName)
+{
+	PlaySectionFromMontage(HitReactionMontage, SectionName);
+}
+
+void ABaseCharacter::PlayHitSound(const FVector& HitLocation)
+{
+	if (HitSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, HitSound, HitLocation);
+	}
+}
+
+void ABaseCharacter::PlayHitParticles(const FVector& HitLocation)
+{
+	if (HitParticles)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticles, HitLocation);
+	}
+}
+
 void ABaseCharacter::DisableCapsuleCollision()
 {
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
+double ABaseCharacter::CalculateHitAngle(const FVector& HitLocation)
+{
+	const FVector Forward = GetActorForwardVector();
+	const FVector ImpactLowered(HitLocation.X, HitLocation.Y, GetActorLocation().Z);
+	const FVector ToHit = (HitLocation - GetActorLocation()).GetSafeNormal();
+
+	const double CosAngle = FVector::DotProduct(Forward, ToHit);
+	double Angle = FMath::Acos(CosAngle);
+	Angle = FMath::RadiansToDegrees(Angle);
+
+	const FVector CrossProduct = FVector::CrossProduct(Forward, ToHit);
+
+	if (CrossProduct.Z < 0)
+	{
+		return Angle * -1;
+	}
+
+	return Angle;
+}
+
+FName ABaseCharacter::ChooseHitMontageSection(double& Angle)
+{
+	if (Angle >= -45.f && Angle <= 45.f) return "HitFromFront";
+	else if (Angle > -135.f && Angle < -45.f) return "HitFromLeft";
+	else if (Angle >= 135.f && Angle <= -135.f) return "HitFromBack";
+	else if (Angle > 45.f && Angle < 135.f) return "HitFromRight";
+	else return "HitFromBack";
+}
+
+FName ABaseCharacter::SelectHitMontageSection(const FVector& HitLocation)
+{
+	double Angle = CalculateHitAngle(HitLocation);
+
+	return ChooseHitMontageSection(Angle);
 }
 
 void ABaseCharacter::PlaySectionFromMontage(UAnimMontage* Montage, const FName& SectionName)
@@ -80,87 +167,4 @@ int32 ABaseCharacter::PlayRandomSectionFromMontage(UAnimMontage* Montage, TArray
 	PlaySectionFromMontage(Montage, MontagesSectionNames[SelectedSection]);
 
 	return SelectedSection;
-}
-
-int32 ABaseCharacter::PlayAttackMontage()
-{
-	return PlayRandomSectionFromMontage(AttackMontage, AttackMontageSections);
-}
-
-int32 ABaseCharacter::PlayDeathMontage()
-{
-	return PlayRandomSectionFromMontage(DeathMontage, DeathMontageSections);
-}
-
-void ABaseCharacter::PlayHitReactionMontage(const FName& SectionName)
-{
-	PlaySectionFromMontage(HitReactionMontage, SectionName);
-}
-
-void ABaseCharacter::AttackEnd()
-{
-}
-
-void ABaseCharacter::PlayHitSound(const FVector& HitLocation)
-{
-	if (HitSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, HitSound, HitLocation);
-	}
-}
-
-void ABaseCharacter::PlayHitParticles(const FVector& HitLocation)
-{
-	if (HitParticles)
-	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticles, HitLocation);
-	}
-}
-
-// Called every frame
-void ABaseCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
-void ABaseCharacter::GetHit(const FVector& HitLocation)
-{
-}
-
-void ABaseCharacter::SetWeaponCollision(ECollisionEnabled::Type CollisionEnabled)
-{
-	if (CurrentWeapon && CurrentWeapon->GetWeaponBox())
-	{
-		CurrentWeapon->GetWeaponBox()->SetCollisionEnabled(CollisionEnabled);
-		CurrentWeapon->IgnoreActors.Empty();
-	}
-}
-
-void ABaseCharacter::DirectionalHitReact(const FVector& HitLocation)
-{
-	const FVector Forward = GetActorForwardVector();
-	const FVector ImpactLowered(HitLocation.X, HitLocation.Y, GetActorLocation().Z);
-	const FVector ToHit = (HitLocation - GetActorLocation()).GetSafeNormal();
-
-	const double CosAngle = FVector::DotProduct(Forward, ToHit);
-	double Angle = FMath::Acos(CosAngle);
-
-	Angle = FMath::RadiansToDegrees(Angle);
-
-	const FVector CrossProduct = FVector::CrossProduct(Forward, ToHit);
-
-	if (CrossProduct.Z < 0)
-	{
-		Angle *= -1;
-	}
-
-	FName SectionSelect("HitFromBack");
-
-	if (Angle >= -45.f && Angle <= 45.f) SectionSelect = "HitFromFront";
-	else if (Angle > -135.f && Angle < -45.f) SectionSelect = "HitFromLeft";
-	else if (Angle >= 135.f && Angle <= -135.f) SectionSelect = "HitFromBack";
-	else if (Angle > 45.f && Angle < 135.f) SectionSelect = "HitFromRight";
-
-	PlayHitReactionMontage(SectionSelect);
 }

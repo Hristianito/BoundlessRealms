@@ -82,24 +82,9 @@ void AEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 
-	HideHealthBar();
+	if (PawnSensing) PawnSensing->OnSeePawn.AddDynamic(this, &AEnemy::PawnSeen);
 
-	EnemyController = Cast<AAIController>(GetController());
-
-	MoveToTarget(PatrolTarget);
-
-	if (PawnSensing)
-	{
-		PawnSensing->OnSeePawn.AddDynamic(this, &AEnemy::PawnSeen);
-	}
-
-	UWorld* World = GetWorld();
-	if (World && WeaponClass)
-	{
-		AWeapon* Weapon = World->SpawnActor<AWeapon>(WeaponClass);
-		Weapon->Equip(GetMesh(), FName("RightHandSocket"), this, this);
-		CurrentWeapon = Weapon;
-	}
+	InitializeEnemy();
 }
 
 bool AEnemy::CanAttack()
@@ -201,6 +186,27 @@ bool AEnemy::IsAttacking()
 bool AEnemy::IsEngaged()
 {
 	return EnemyState == EEnemyState::EES_Engaged;
+}
+
+void AEnemy::InitializeEnemy()
+{
+	EnemyController = Cast<AAIController>(GetController());
+	MoveToTarget(PatrolTarget);
+
+	HideHealthBar();
+
+	SpawnDefaultWeapon();
+}
+
+void AEnemy::SpawnDefaultWeapon()
+{
+	UWorld* World = GetWorld();
+	if (World && WeaponClass)
+	{
+		AWeapon* Weapon = World->SpawnActor<AWeapon>(WeaponClass);
+		Weapon->Equip(GetMesh(), FName("RightHandSocket"), this, this);
+		CurrentWeapon = Weapon;
+	}
 }
 
 void AEnemy::CheckPatrolTarget()

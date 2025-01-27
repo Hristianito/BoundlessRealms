@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Items/Weapons/Weapon.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/SphereComponent.h"
@@ -50,37 +47,54 @@ void AWeapon::BeginPlay()
 
 void AWeapon::Equip(USceneComponent* InParent, FName InSocketName, AActor* NewOwner, APawn* NewInstigator)
 {
-	AttachMeshToSocket(InParent, InSocketName);
 	ItemState = EItemState::EIS_Equipped;
 
 	SetOwner(NewOwner);
 	SetInstigator(NewInstigator);
 
-	if (FirstEquipSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, FirstEquipSound, GetActorLocation());
-	}
-
-	if (Sphere)
-	{
-		Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	}
-
-	if (WeaponBox)
-	{
-		GetWeaponBox()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	}
-
-	if (ItemGlow)
-	{
-		ItemGlow->Deactivate();
-	}
+	AttachMeshToSocket(InParent, InSocketName);
+	PlayFirstEquipSound();
+	DisableSphereCollision();
+	DisableBoxCollision();
+	DeactivateGlow();
 }
 
 void AWeapon::AttachMeshToSocket(USceneComponent* InParent, const FName& InSocketName)
 {
 	FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, true);
 	ItemMesh->AttachToComponent(InParent, TransformRules, InSocketName);
+}
+
+void AWeapon::PlayFirstEquipSound()
+{
+	if (FirstEquipSound && GetOwner()->ActorHasTag("MainCharacter"))
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, FirstEquipSound, GetActorLocation());
+	}
+}
+
+void AWeapon::DisableSphereCollision()
+{
+	if (Sphere)
+	{
+		Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+}
+
+void AWeapon::DisableBoxCollision()
+{
+	if (WeaponBox)
+	{
+		GetWeaponBox()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+}
+
+void AWeapon::DeactivateGlow()
+{
+	if (ItemGlow)
+	{
+		ItemGlow->Deactivate();
+	}
 }
 
 void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -101,11 +115,21 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 	TArray<AActor*> ActorsToIgnore;
 	FHitResult HitResult;
 
+	AddUniqueActorsToIgnore(ActorsToIgnore);
+	BoxTrace(WeaponStart, WeaponEnd, ActorsToIgnore, HitResult);
+	Hit(HitResult);
+}
+
+void AWeapon::AddUniqueActorsToIgnore(TArray<AActor*, FDefaultAllocator>& ActorsToIgnore)
+{
 	for (AActor* Actor : IgnoreActors)
 	{
 		ActorsToIgnore.AddUnique(Actor);
 	}
+}
 
+void AWeapon::BoxTrace(const FVector& WeaponStart, const FVector& WeaponEnd, TArray<AActor*, FDefaultAllocator>& ActorsToIgnore, FHitResult& HitResult)
+{
 	UKismetSystemLibrary::BoxTraceSingle(
 		this,
 		WeaponStart,
@@ -118,43 +142,74 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 		EDrawDebugTrace::None,
 		HitResult,
 		true);
+}
 
+void AWeapon::Hit(FHitResult& HitResult)
+{
 	if (HitResult.GetActor())
-	{	
-		UGameplayStatics::ApplyDamage(
+	{
+		ApplyDamage(HitResult);
+		GetHit(HitResult);
+		IgnoreActors.AddUnique(HitResult.GetActor());
+		CreateField(HitResult.ImpactPoint);
+	}
+}
+
+void AWeapon::ApplyDamage(FHitResult& HitResult)
+{
+	UGameplayStatics::ApplyDamage(
 		HitResult.GetActor(),
 		Damage,
 		GetInstigatorController(),
 		this,
 		UDamageType::StaticClass());
+}
 
-		if (IHitInterface* HitInterface = Cast<IHitInterface>(HitResult.GetActor()))
-		{
-			HitInterface->GetHit(HitResult.ImpactPoint);
-		}
-
-		IgnoreActors.AddUnique(HitResult.GetActor());
-		CreateField(HitResult.ImpactPoint);
+void AWeapon::GetHit(FHitResult& HitResult)
+{
+	if (IHitInterface* HitInterface = Cast<IHitInterface>(HitResult.GetActor()))
+	{
+		HitInterface->GetHit(HitResult.ImpactPoint);
 	}
 }
 
 void AWeapon::CreateField(const FVector& FieldLocation)
 {
 	URadialFalloff* RadialFalloff = NewObject<URadialFalloff>(this);
-	RadialFalloff->Magnitude = 1000000000.0f;  
-	RadialFalloff->Radius = 200.0f;         
-	RadialFalloff->Position = FieldLocation; 
-	RadialFalloff->Falloff = EFieldFalloffType::Field_FallOff_None; 
+	FieldRadialFalloff(RadialFalloff, FieldLocation);
 
 	URadialVector* RadialVector = NewObject<URadialVector>(this);
-	RadialVector->Magnitude = 5000000000.0f;       
-	RadialVector->Position = FieldLocation;
+	FieldRadialVector(RadialVector, FieldLocation);
 
 	UFieldSystemMetaDataFilter* MetaDataFilter = NewObject<UFieldSystemMetaDataFilter>(this);
-	MetaDataFilter->SetMetaDataFilterType(EFieldFilterType::Field_Filter_Dynamic, 
-		EFieldObjectType::Field_Object_Destruction, 
-		EFieldPositionType::Field_Position_CenterOfMass);
+	FieldMetaDataFilter(MetaDataFilter);
 
+	ApplyForceField(RadialFalloff, MetaDataFilter, RadialVector);
+}
+
+void AWeapon::FieldRadialFalloff(URadialFalloff* RadialFalloff, const FVector& FieldLocation)
+{
+	RadialFalloff->Magnitude = 1000000000.0f;
+	RadialFalloff->Radius = 200.0f;
+	RadialFalloff->Position = FieldLocation;
+	RadialFalloff->Falloff = EFieldFalloffType::Field_FallOff_None;
+}
+
+void AWeapon::FieldRadialVector(URadialVector* RadialVector, const FVector& FieldLocation)
+{
+	RadialVector->Magnitude = 5000000000.0f;
+	RadialVector->Position = FieldLocation;
+}
+
+void AWeapon::FieldMetaDataFilter(UFieldSystemMetaDataFilter* MetaDataFilter)
+{
+	MetaDataFilter->SetMetaDataFilterType(EFieldFilterType::Field_Filter_Dynamic,
+		EFieldObjectType::Field_Object_Destruction,
+		EFieldPositionType::Field_Position_CenterOfMass);
+}
+
+void AWeapon::ApplyForceField(URadialFalloff* RadialFalloff, UFieldSystemMetaDataFilter* MetaDataFilter, URadialVector* RadialVector)
+{
 	FieldSystem->ApplyPhysicsField(true,
 		EFieldPhysicsType::Field_ExternalClusterStrain,
 		nullptr,

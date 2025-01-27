@@ -1,11 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "MainCharacter.h"	
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
-#include "Components/BoxComponent.h"
 #include "InputMappingContext.h"
 #include "InputAction.h"
 #include "EnhancedInputComponent.h"
@@ -14,10 +10,8 @@
 #include "Items/Weapons/Weapon.h"
 #include "Animation/AnimMontage.h"
 
-// Sets default values
 AMainCharacter::AMainCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	bUseControllerRotationPitch = false;
@@ -32,7 +26,25 @@ AMainCharacter::AMainCharacter()
 	Camera->SetupAttachment(SpringArm);
 }
 
-// Called when the game starts or when spawned
+void AMainCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+}
+
+void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+		EnhancedInputComponent->BindAction(MovementAction, ETriggerEvent::Triggered, this, &AMainCharacter::Move);
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMainCharacter::Look);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(EKeyAction, ETriggerEvent::Triggered, this, &AMainCharacter::EKeyPressed);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &AMainCharacter::Attack);
+	}
+}
+
 void AMainCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -47,6 +59,47 @@ void AMainCharacter::BeginPlay()
 	}
 
 	Tags.Add(FName("MainCharacter"));
+}
+
+bool AMainCharacter::CanAttack()
+{
+	return ActionState == EActionState::EAS_Unoccupied &&
+		CharacterState != ECharacterState::ECS_Unequipped;
+}
+
+void AMainCharacter::Attack()
+{
+	if (CanAttack())
+	{
+		PlayAttackMontage();
+		ActionState = EActionState::EAS_Attacking;
+	}
+}
+
+void AMainCharacter::AttackEnd()
+{
+	ActionState = EActionState::EAS_Unoccupied;
+}
+
+void AMainCharacter::AttachWeaponToHand()
+{
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->AttachMeshToSocket(GetMesh(), FName("RightHandSocket"));
+	}
+}
+
+void AMainCharacter::FinnishedAttachingToHand()
+{
+	ActionState = EActionState::EAS_Unoccupied;
+}
+
+void AMainCharacter::AttachWeaponToBack()
+{
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->AttachMeshToSocket(GetMesh(), FName("SpineSocket"));
+	}
 }
 
 void AMainCharacter::Move(const FInputActionValue& Value)
@@ -72,7 +125,6 @@ void AMainCharacter::Look(const FInputActionValue& Value)
 
 	AddControllerPitchInput(LookVector.Y);
 	AddControllerYawInput(LookVector.X);
-	
 }
 
 void AMainCharacter::EKeyPressed()
@@ -82,49 +134,11 @@ void AMainCharacter::EKeyPressed()
 	{
 		PickUpWeapon(OverlappingWeapon);
 	}
+
 	// if you currently have a weapon - equip/unequip it
 	else if (CurrentWeapon)
 	{
 		EquipUnequip();
-	}
-}
-
-void AMainCharacter::PickUpWeapon(AWeapon* OverlappingWeapon)
-{
-	OverlappingWeapon->Equip(GetMesh(), FName("RightHandSocket"), this, this);
-	CharacterState = ECharacterState::ECS_EquippedSword;
-	OverlappingItem = nullptr;
-	CurrentWeapon = OverlappingWeapon;
-}
-
-void AMainCharacter::Attack()
-{
-	if (CanAttack())
-	{
-		PlayAttackMontage();
-		ActionState = EActionState::EAS_Attacking;
-	}
-}
-
-bool AMainCharacter::CanAttack()
-{
-	return ActionState == EActionState::EAS_Unoccupied && 
-		CharacterState != ECharacterState::ECS_Unequipped;
-}
-
-void AMainCharacter::EquipUnequip()
-{
-	if (CanEquip())
-	{
-		PlayEquipUnequipMontage(FName("Equip"));
-		CharacterState = ECharacterState::ECS_EquippedSword;
-		ActionState = EActionState::EAS_EquippingWeapon;
-	}
-	else if (CanUnequip())
-	{
-		PlayEquipUnequipMontage(FName("Unequip"));
-		CharacterState = ECharacterState::ECS_Unequipped;
-		ActionState = EActionState::EAS_EquippingWeapon;
 	}
 }
 
@@ -141,6 +155,40 @@ bool AMainCharacter::CanUnequip()
 		CharacterState != ECharacterState::ECS_Unequipped;
 }
 
+void AMainCharacter::PickUpWeapon(AWeapon* OverlappingWeapon)
+{
+	OverlappingWeapon->Equip(GetMesh(), FName("RightHandSocket"), this, this);
+	CharacterState = ECharacterState::ECS_EquippedSword;
+	OverlappingItem = nullptr;
+	CurrentWeapon = OverlappingWeapon;
+}
+
+void AMainCharacter::EquipUnequip()
+{
+	if (CanEquip())
+	{
+		Equip();
+	}
+	else if (CanUnequip())
+	{
+		Unequip();
+	}
+}
+
+void AMainCharacter::Equip()
+{
+	PlayEquipUnequipMontage(FName("Equip"));
+	CharacterState = ECharacterState::ECS_EquippedSword;
+	ActionState = EActionState::EAS_EquippingWeapon;
+}
+
+void AMainCharacter::Unequip()
+{
+	PlayEquipUnequipMontage(FName("Unequip"));
+	CharacterState = ECharacterState::ECS_Unequipped;
+	ActionState = EActionState::EAS_EquippingWeapon;
+}
+
 void AMainCharacter::PlayEquipUnequipMontage(FName SectionName)
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
@@ -149,53 +197,5 @@ void AMainCharacter::PlayEquipUnequipMontage(FName SectionName)
 	{
 		AnimInstance->Montage_Play(EquipUnequipMontage);
 		AnimInstance->Montage_JumpToSection(SectionName, EquipUnequipMontage);
-	}
-}
-
-void AMainCharacter::AttackEnd()
-{
-	ActionState = EActionState::EAS_Unoccupied;
-}
-
-void AMainCharacter::Unequip()
-{
-	if (CurrentWeapon)
-	{
-		CurrentWeapon->AttachMeshToSocket(GetMesh(), FName("SpineSocket"));
-	}
-}
-
-void AMainCharacter::Equip()
-{
-	if (CurrentWeapon)
-	{
-		CurrentWeapon->AttachMeshToSocket(GetMesh(), FName("RightHandSocket"));
-	}
-}
-
-void AMainCharacter::FinnishedEquipping()
-{
-	ActionState = EActionState::EAS_Unoccupied;
-}
-
-// Called every frame
-void AMainCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
-// Bind functionality to input
-void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) 
-	{
-		EnhancedInputComponent->BindAction(MovementAction, ETriggerEvent::Triggered, this, &AMainCharacter::Move);
-		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMainCharacter::Look);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
-		EnhancedInputComponent->BindAction(EKeyAction, ETriggerEvent::Triggered, this, &AMainCharacter::EKeyPressed);
-		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &AMainCharacter::Attack);
 	}
 }

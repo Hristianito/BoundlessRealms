@@ -1,12 +1,8 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-#include "Items/Item.h"
-#include "BoundlessRealms/DebugMacros.h"
+﻿#include "Items/Item.h"
 #include "Components/SphereComponent.h"
 #include "MainCharacter.h"
 #include "NiagaraComponent.h"
 
-// Sets default values
 AItem::AItem()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -22,22 +18,23 @@ AItem::AItem()
 	ItemGlow->SetupAttachment(GetRootComponent());
 }
 
+void AItem::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	RunningTime += DeltaTime;
+
+	if (ItemState == EItemState::EIS_Hovering)
+	{
+		AddActorWorldOffset(FVector(0.f, 0.f, TransformedSin()));
+	}
+}
+
 void AItem::BeginPlay()
 {
 	Super::BeginPlay();
 
 	Sphere->OnComponentBeginOverlap.AddDynamic(this, &AItem::OnSphereOverlap);
 	Sphere->OnComponentEndOverlap.AddDynamic(this, &AItem::OnSphereEndOverlap);
-}
-
-float AItem::TransformedSin()
-{
-	return Amplitude * FMath::Sin(RunningTime * Time);
-}
-
-float AItem::TransformedCos()
-{
-	return Amplitude * FMath::Cos(RunningTime * Time);
 }
 
 void AItem::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -56,14 +53,12 @@ void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 	}
 }
 
-void AItem::Tick(float DeltaTime)
+float AItem::TransformedSin()
 {
-	Super::Tick(DeltaTime);
-	RunningTime += DeltaTime;
-
-	if (ItemState == EItemState::EIS_Hovering) 
-	{
-		AddActorWorldOffset(FVector(0.f, 0.f, TransformedSin()));
-	}
+	return Amplitude * FMath::Sin(RunningTime * Time);
 }
 
+float AItem::TransformedCos()
+{
+	return Amplitude * FMath::Cos(RunningTime * Time);
+}
