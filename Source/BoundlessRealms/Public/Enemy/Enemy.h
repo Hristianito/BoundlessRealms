@@ -26,8 +26,10 @@ public:
 	// </AActor>
 	
 	// <IHitInterface>
-	virtual void GetHit(const FVector& HitLocation) override;
+	virtual void GetHit(const FVector& HitLocation, AActor* Hitter) override;
 	// </IHitInterface>
+
+	bool bCanBeTraced = true;
 
 protected:
 
@@ -41,11 +43,7 @@ protected:
 	virtual void AttackEnd() override;
 	virtual void ReceiveDamage(const float Damage) override;
 	virtual void Death() override;
-	virtual int32 PlayDeathMontage() override;
 	// </ABaseCharacter>
-
-	UPROPERTY(BlueprintReadOnly)
-	TEnumAsByte<EDeathState> DeathState;
 
 	UPROPERTY(BlueprintReadOnly)
 	EEnemyState EnemyState = EEnemyState::EES_Patrolling;
@@ -113,9 +111,6 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	double PatrolRadius = 200.f;
-
-	UPROPERTY()
-	AActor* CombatTarget;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	float ChaseSpeed = 300.f;

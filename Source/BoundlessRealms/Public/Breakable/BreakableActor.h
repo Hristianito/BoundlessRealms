@@ -20,7 +20,7 @@ public:
 	ABreakableActor();
 
 	// <IHitInterface>
-	virtual void GetHit(const FVector& HitLocation) override;
+	virtual void GetHit(const FVector& HitLocation, AActor* Hitter) override;
 	// </IHitInterface>
 
 protected:

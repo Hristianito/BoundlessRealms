@@ -26,6 +26,12 @@ public:
 	ECharacterState CharacterState;
 
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	EActionState ActionState;
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	TEnumAsByte<EDeathState> DeathState;
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	UCharacterMovementComponent* CharacterMovement;
 
 	UPROPERTY(BlueprintReadOnly, Category = Movement)

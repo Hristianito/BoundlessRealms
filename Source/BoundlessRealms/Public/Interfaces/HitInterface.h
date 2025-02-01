@@ -16,5 +16,5 @@ class BOUNDLESSREALMS_API IHitInterface
 
 public:
 
-	virtual void GetHit(const FVector& HitLocation) = 0;
+	virtual void GetHit(const FVector& HitLocation, AActor* Hitter) = 0;
 };

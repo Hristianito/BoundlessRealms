@@ -2,8 +2,11 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraComponent.h"
+#include "HUD/GameHUD.h"
+#include "HUD/HUDOverlay.h"
 #include "Components/InputComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/AttributeComponent.h"
 #include "InputMappingContext.h"
 #include "InputAction.h"
 #include "EnhancedInputComponent.h"
@@ -42,6 +45,14 @@ void AMainCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
+float AMainCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	ReceiveDamage(DamageAmount);
+	SetHUDHealth();
+
+	return DamageAmount;
+}
+
 void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -50,30 +61,37 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	{
 		EnhancedInputComponent->BindAction(MovementAction, ETriggerEvent::Triggered, this, &AMainCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMainCharacter::Look);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &AMainCharacter::Jump);
 		EnhancedInputComponent->BindAction(EKeyAction, ETriggerEvent::Triggered, this, &AMainCharacter::EKeyPressed);
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &AMainCharacter::Attack);
 	}
 }
 
-void AMainCharacter::GetHit(const FVector& HitLocation)
+void AMainCharacter::Jump()
 {
-	PlayHitSound(HitLocation);
-	PlayHitParticles(HitLocation);
+	if (IsUnoccupied())
+	{
+		Super::Jump();
+	}
+}
+
+bool AMainCharacter::IsUnoccupied()
+{
+	return ActionState == EActionState::EAS_Unoccupied;
+}
+
+void AMainCharacter::GetHit(const FVector& HitLocation, AActor* Hitter)
+{
+	Super::GetHit(HitLocation, Hitter);
+
+	if (IsAlive()) ActionState = EActionState::EAS_Hit;
 }
 
 void AMainCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Add Main Mapping Context
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller)) 
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer())) 
-		{
-			Subsystem->AddMappingContext(MappingContext, 0);
-		}
-	}
+	InitializeMainCharacter();
 
 	Tags.Add(FName("MainCharacter"));
 }
@@ -86,10 +104,13 @@ bool AMainCharacter::CanAttack()
 
 void AMainCharacter::Attack()
 {
+	Super::Attack();
+
 	if (CanAttack())
 	{
-		PlayAttackMontage();
 		ActionState = EActionState::EAS_Attacking;
+
+		PlayAttackMontage();
 	}
 }
 
@@ -98,6 +119,17 @@ void AMainCharacter::AttackEnd()
 	Super::AttackEnd();
 
 	ActionState = EActionState::EAS_Unoccupied;
+}
+
+void AMainCharacter::Death()
+{
+	Super::Death();
+
+	ActionState = EActionState::EAS_Dead;
+
+	DisableMeshCollision();
+	DisableCapsuleCollision();
+	DisableWeaponCollision();
 }
 
 void AMainCharacter::AttachWeaponToHand()
@@ -121,6 +153,11 @@ void AMainCharacter::AttachWeaponToBack()
 	}
 }
 
+void AMainCharacter::HitReactionEnd()
+{
+	ActionState = EActionState::EAS_Unoccupied;
+}
+
 void AMainCharacter::Move(const FInputActionValue& Value)
 {
 	if (ActionState == EActionState::EAS_Unoccupied) 
@@ -135,6 +172,47 @@ void AMainCharacter::Move(const FInputActionValue& Value)
 
 		const FVector RigthDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		AddMovementInput(RigthDirection, MovementVector.X);
+	}
+}
+
+void AMainCharacter::InitializeMainCharacter()
+{
+	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	{
+		AddMainMappingContext(PlayerController);
+
+		InitializeHUDOverlay(PlayerController);
+	}
+}
+
+void AMainCharacter::AddMainMappingContext(APlayerController* PlayerController)
+{
+	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+	{
+		Subsystem->AddMappingContext(MappingContext, 0);
+	}
+}
+
+void AMainCharacter::InitializeHUDOverlay(APlayerController* PlayerController)
+{
+	if (AGameHUD* GameHUD = Cast<AGameHUD>(PlayerController->GetHUD()))
+	{
+		HUDOverlay = GameHUD->GetHUDOverlay();
+		if (HUDOverlay && Attributes)
+		{
+			HUDOverlay->SetHealthPercent(Attributes->GetHealthPercent());
+			HUDOverlay->SetStaminaPercent(1.f);
+			HUDOverlay->SetTextCoins(0);
+			HUDOverlay->SetTextSouls(0);
+		}
+	}
+}
+
+void AMainCharacter::SetHUDHealth()
+{
+	if (HUDOverlay && Attributes)
+	{
+		HUDOverlay->SetHealthPercent(Attributes->GetHealthPercent());
 	}
 }
 

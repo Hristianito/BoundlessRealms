@@ -12,6 +12,7 @@ class UInputMappingContext;
 class UInputAction;
 class AItem;
 class UAnimMontage;
+class UHUDOverlay;
 
 UCLASS()
 class BOUNDLESSREALMS_API AMainCharacter : public ABaseCharacter
@@ -24,30 +25,35 @@ public:
 
 	// <AActor>
 	virtual void Tick(float DeltaTime) override;
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	// </AActor>
 
 	// <ACharacter>
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void Jump() override;
 	// </ACharacter>
 
 	// <IHitInterface>
-	virtual void GetHit(const FVector& HitLocation) override;
+	virtual void GetHit(const FVector& HitLocation, AActor* Hitter) override;
 	// </IHitInterface>
 
-	FORCEINLINE void SetOverlappingItem(AItem* Item) { OverlappingItem = Item; }
-
 	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
+	FORCEINLINE EActionState GetActionState() const { return ActionState; }
+	FORCEINLINE TEnumAsByte<EDeathState> GetDeathState() const { return DeathState; }
+	FORCEINLINE void SetOverlappingItem(AItem* Item) { OverlappingItem = Item; }
 
 protected:
 
 	// <AActor>
 	virtual void BeginPlay() override;
+
 	// </AActor>
 
 	// <ABaseCharacter>
 	virtual bool CanAttack() override;
 	virtual void Attack() override;
 	virtual void AttackEnd() override;
+	virtual void Death() override;
 	// </ABaseCharacter>
 
 	UFUNCTION(BlueprintCallable)
@@ -59,10 +65,20 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void AttachWeaponToBack();
 
+	UFUNCTION(BlueprintCallable)
+	void HitReactionEnd();
+
 	UPROPERTY(BlueprintReadWrite)
 	EActionState ActionState = EActionState::EAS_Unoccupied;
 
 private:
+
+	// Initialize
+	void InitializeMainCharacter();
+	void AddMainMappingContext(APlayerController* PlayerController);
+	void InitializeHUDOverlay(APlayerController* PlayerController);
+
+	void SetHUDHealth();
 
 	// Input
 	void Move(const FInputActionValue& Value);
@@ -77,6 +93,8 @@ private:
 	void Equip();
 	void Unequip();
 	void PlayEquipUnequipMontage(FName SectionName);
+
+	bool IsUnoccupied();
 
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputMappingContext* MappingContext;
@@ -108,6 +126,8 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = Montages)
 	UAnimMontage* EquipUnequipMontage;
 
+	UPROPERTY()
+	UHUDOverlay* HUDOverlay;
 	ECharacterState CharacterState = ECharacterState::ECS_Unequipped;
 
 };

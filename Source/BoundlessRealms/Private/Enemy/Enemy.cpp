@@ -52,7 +52,7 @@ float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 	ReceiveDamage(DamageAmount);
 
 	CombatTarget = EventInstigator->GetPawn();
-
+	
 	StartChasing();
 
 	return DamageAmount;
@@ -66,15 +66,14 @@ void AEnemy::Destroyed()
 	}
 }
 
-void AEnemy::GetHit(const FVector& HitLocation)
+void AEnemy::GetHit(const FVector& HitLocation, AActor* Hitter)
 {
-	ShowHealthBar();
+	Super::GetHit(HitLocation, Hitter);
 
-	if (IsAlive()) DirectionalHitReact(HitLocation);
-	else if (!IsAlive()) Death();
-
-	PlayHitSound(HitLocation);
-	PlayHitParticles(HitLocation);
+	if (!IsDead()) ShowHealthBar();
+	ClearPatrolTimer();
+	ClearAttackTimer();
+	StopAttackMontage();
 }
 
 void AEnemy::BeginPlay()
@@ -89,11 +88,15 @@ void AEnemy::BeginPlay()
 
 bool AEnemy::CanAttack()
 {
-	return IsInsideAttackRadius() && !IsEngaged() && !IsAttacking() && !IsDead();
+	return IsInsideAttackRadius() && !IsAttacking() && !IsEngaged() && !IsDead();
 }
 
 void AEnemy::Attack()
 {
+	Super::Attack();
+
+	if (CombatTarget == nullptr) return;
+
 	EnemyState = EEnemyState::EES_Engaged;
 
 	PlayAttackMontage();
@@ -117,24 +120,16 @@ void AEnemy::ReceiveDamage(const float Damage)
 
 void AEnemy::Death()
 {
+	Super::Death();
+
 	EnemyState = EEnemyState::EES_Dead;
 
-	PlayDeathMontage();
 	ClearAttackTimer();
 	DisableCapsuleCollision();
+	DisableWeaponCollision();
 	SetLifeSpan(DeathLifeSpan);
 	HideHealthBar();
 	GetCharacterMovement()->bOrientRotationToMovement = false;
-}
-
-int32 AEnemy::PlayDeathMontage()
-{
-	const int32 Selection = Super::PlayDeathMontage();
-	TEnumAsByte<EDeathState> State(Selection);
-
-	if (State < EDeathState::EDS_MAX) DeathState = State;
-
-	return Selection;
 }
 
 bool AEnemy::InTargetRange(AActor* Target, double Radius)
@@ -225,7 +220,6 @@ void AEnemy::CheckCombatTarget()
 	else if (IsOutsideAttackRadius() && !IsChasing())
 	{
 		ClearAttackTimer();
-
 		if (!IsEngaged()) StartChasing();
 	}
 	else if (CanAttack())
@@ -255,7 +249,6 @@ void AEnemy::StartChasing()
 void AEnemy::StartAttacking()
 {
 	EnemyState = EEnemyState::EES_Attacking;
-
 	const float RandomWaitTime = FMath::RandRange(AttackTimerMin, AttackTimerMax);
 	GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemy::Attack, RandomWaitTime);
 }
@@ -339,7 +332,8 @@ void AEnemy::PawnSeen(APawn* SeenPawn)
 {
 	bool ShouldChase =
 		EnemyState == EEnemyState::EES_Patrolling &&
-		SeenPawn->ActorHasTag(FName("MainCharacter"));
+		SeenPawn->ActorHasTag(FName("MainCharacter")) &&
+		!SeenPawn->ActorHasTag(FName("Dead"));
 
 	if (ShouldChase)
 	{	

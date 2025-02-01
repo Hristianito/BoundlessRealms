@@ -182,7 +182,7 @@ void AWeapon::GetHit(FHitResult& HitResult)
 {
 	if (IHitInterface* HitInterface = Cast<IHitInterface>(HitResult.GetActor()))
 	{
-		HitInterface->GetHit(HitResult.ImpactPoint);
+		HitInterface->GetHit(HitResult.ImpactPoint, GetOwner());
 	}
 }
 

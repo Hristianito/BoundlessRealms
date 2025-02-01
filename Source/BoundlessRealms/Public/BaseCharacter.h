@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Interfaces/HitInterface.h"
+#include "CharacterStates.h"
 #include "BaseCharacter.generated.h"
 
 class AWeapon;
@@ -23,7 +24,7 @@ public:
 	// </AActor>
 
 	// <IHitInterface>
-	virtual void GetHit(const FVector& HitLocation) override;
+	virtual void GetHit(const FVector& HitLocation, AActor* Hitter) override;
 	// </IHitInterface>
 
 protected:
@@ -38,7 +39,7 @@ protected:
 	virtual void Attack();
 	virtual void ReceiveDamage(const float Damage);
 	virtual void Death();
-	void DirectionalHitReact(const FVector& HitLocation);
+	void DirectionalHitReact(AActor* Hitter);
 
 	UFUNCTION(BlueprintCallable)
 	virtual void AttackEnd();
@@ -50,12 +51,22 @@ protected:
 	virtual int32 PlayAttackMontage();
 	virtual int32 PlayDeathMontage();
 	void PlayHitReactionMontage(const FName& SectionName);
+	void StopAttackMontage();
+
+	UFUNCTION(BlueprintCallable)
+	FVector GetTranslationWarpTarget();
+
+	UFUNCTION(BlueprintCallable)
+	FVector GetRotationWarpTarget();
 
 	// Effects
 	void PlayHitSound(const FVector& HitLocation);
 	void PlayHitParticles(const FVector& HitLocation);
 	
+	// Disable Collision
+	void DisableMeshCollision();
 	void DisableCapsuleCollision();
+	void DisableWeaponCollision();
 
 	UPROPERTY(VisibleAnywhere)
 	UAttributeComponent* Attributes;
@@ -63,12 +74,21 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon")
 	AWeapon* CurrentWeapon;
 
+	UPROPERTY(BlueprintReadOnly)
+	AActor* CombatTarget;
+
+	UPROPERTY(BlueprintReadOnly)
+	TEnumAsByte<EDeathState> DeathState;
+
+	UPROPERTY(EditAnywhere)
+	double WarpTargetDistance = 75.f;
+
 private:
 
 	// Directional Hit
 	double CalculateHitAngle(const FVector& HitLocation);
 	FName ChooseHitMontageSection(double& Angle);
-	FName SelectHitMontageSection(const FVector& HitLocation);
+	FName SelectHitMontageSection(AActor* Hitter);
 
 	// Montages
 	void PlaySectionFromMontage(UAnimMontage* Montage, const FName& SectionName);

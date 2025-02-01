@@ -5,6 +5,7 @@
 #include "Components/AttributeComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "BoundlessRealms/DebugMacros.h"
 
 ABaseCharacter::ABaseCharacter()
 {
@@ -22,8 +23,14 @@ void ABaseCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void ABaseCharacter::GetHit(const FVector& HitLocation)
+void ABaseCharacter::GetHit(const FVector& HitLocation, AActor* Hitter)
 {
+	if (IsAlive()) DirectionalHitReact(Hitter);
+	else if (!IsAlive()) Death();
+
+	SetWeaponCollision(ECollisionEnabled::NoCollision);
+	PlayHitSound(HitLocation);
+	PlayHitParticles(HitLocation);
 }
 
 void ABaseCharacter::BeginPlay()
@@ -43,6 +50,10 @@ bool ABaseCharacter::CanAttack()
 
 void ABaseCharacter::Attack()
 {
+	if (CombatTarget && CombatTarget->ActorHasTag(FName("Dead")))
+	{
+		CombatTarget = nullptr;
+	}
 }
 
 void ABaseCharacter::ReceiveDamage(const float Damage)
@@ -55,11 +66,14 @@ void ABaseCharacter::ReceiveDamage(const float Damage)
 
 void ABaseCharacter::Death()
 {
+	PlayDeathMontage();
+
+	Tags.Add(FName("Dead"));
 }
 
-void ABaseCharacter::DirectionalHitReact(const FVector& HitLocation)
+void ABaseCharacter::DirectionalHitReact(AActor* Hitter)
 {
-	PlayHitReactionMontage(SelectHitMontageSection(HitLocation));
+	PlayHitReactionMontage(SelectHitMontageSection(Hitter));
 }
 
 void ABaseCharacter::AttackEnd()
@@ -83,12 +97,48 @@ int32 ABaseCharacter::PlayAttackMontage()
 
 int32 ABaseCharacter::PlayDeathMontage()
 {
-	return PlayRandomSectionFromMontage(DeathMontage, DeathMontageSections);
+	const int32 Selection = PlayRandomSectionFromMontage(DeathMontage, DeathMontageSections);
+	TEnumAsByte<EDeathState> State(Selection);
+
+	if (State < EDeathState::EDS_MAX) DeathState = State;
+
+	return Selection;
 }
 
 void ABaseCharacter::PlayHitReactionMontage(const FName& SectionName)
 {
 	PlaySectionFromMontage(HitReactionMontage, SectionName);
+}
+
+void ABaseCharacter::StopAttackMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		AnimInstance->Montage_Stop(0.25f, AttackMontage);
+	}
+}
+
+FVector ABaseCharacter::GetTranslationWarpTarget()
+{
+	if (CombatTarget == nullptr) return FVector();
+
+	const FVector CombatTargetLocation = CombatTarget->GetActorLocation();
+	const FVector Location = GetActorLocation();
+
+	FVector TargetToMe = (Location - CombatTargetLocation).GetSafeNormal();
+	TargetToMe *= WarpTargetDistance;
+
+	return CombatTargetLocation + TargetToMe;
+}
+
+FVector ABaseCharacter::GetRotationWarpTarget()
+{
+	if (CombatTarget)
+	{
+		return CombatTarget->GetActorLocation();
+	}
+	return FVector();
 }
 
 void ABaseCharacter::PlayHitSound(const FVector& HitLocation)
@@ -107,9 +157,19 @@ void ABaseCharacter::PlayHitParticles(const FVector& HitLocation)
 	}
 }
 
+void ABaseCharacter::DisableMeshCollision()
+{
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
 void ABaseCharacter::DisableCapsuleCollision()
 {
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
+void ABaseCharacter::DisableWeaponCollision()
+{
+	SetWeaponCollision(ECollisionEnabled::NoCollision);
 }
 
 double ABaseCharacter::CalculateHitAngle(const FVector& HitLocation)
@@ -141,9 +201,9 @@ FName ABaseCharacter::ChooseHitMontageSection(double& Angle)
 	else return "HitFromBack";
 }
 
-FName ABaseCharacter::SelectHitMontageSection(const FVector& HitLocation)
+FName ABaseCharacter::SelectHitMontageSection(AActor* Hitter)
 {
-	double Angle = CalculateHitAngle(HitLocation);
+	double Angle = CalculateHitAngle(Hitter->GetActorLocation());
 
 	return ChooseHitMontageSection(Angle);
 }
