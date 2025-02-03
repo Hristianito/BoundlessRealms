@@ -6,6 +6,7 @@
 
 class USphereComponent;
 class UNiagaraComponent;
+class UNiagaraSystem;
 
 enum class EItemState : uint8
 {
@@ -34,6 +35,10 @@ protected:
 
 	template<typename T>
 	T Avg(T first, T second);
+
+	// Pickup Effects
+	void SpawnPickupEffect();
+	void SpawnPickupSound();
 
 	UFUNCTION()
 	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -65,6 +70,12 @@ protected:
 	float Time = 5.f;
 
 private:
+
+	UPROPERTY(EditAnywhere)
+	UNiagaraSystem* PickupEffect;
+
+	UPROPERTY(EditAnywhere)
+	USoundBase* PickupSound;
 
 	UPROPERTY(VisibleInstanceOnly)
 	float RunningTime = 0.f;

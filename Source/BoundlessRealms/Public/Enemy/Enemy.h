@@ -9,6 +9,7 @@ class UHealthBarComponent;
 class UPawnSensingComponent;
 class AAIController;
 class AWeapon;
+class ASoul;
 
 UCLASS()
 class BOUNDLESSREALMS_API AEnemy : public ABaseCharacter
@@ -28,8 +29,6 @@ public:
 	// <IHitInterface>
 	virtual void GetHit(const FVector& HitLocation, AActor* Hitter) override;
 	// </IHitInterface>
-
-	bool bCanBeTraced = true;
 
 protected:
 
@@ -76,6 +75,8 @@ private:
 	void PatrolTimerFinished();
 	void ClearPatrolTimer();
 	void ClearAttackTimer();
+	void DisableOrientRotationToMovement();
+	void SpawnSoul();
 
 	UFUNCTION()
 	void PawnSeen(APawn* SeenPawn);
@@ -89,7 +90,7 @@ private:
 	UPROPERTY()
 	AAIController* EnemyController;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Combat")
 	TSubclassOf<AWeapon> WeaponClass;
 
 	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
@@ -106,16 +107,16 @@ private:
 	UPROPERTY(EditAnywhere, Category = "AI Navigation")
 	float PatrolWaitMax = 8.f;
 
-	UPROPERTY(EditAnywhere, Category = "Combat")
+	UPROPERTY(EditAnywhere, Category = "AI Navigation")
 	float PatrolSpeed = 125.f;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Combat")
 	double PatrolRadius = 200.f;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	float ChaseSpeed = 300.f;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Combat")
 	float CombatRadius = 500.f;
 
 	FTimerHandle AttackTimer;
@@ -126,9 +127,13 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	float AttackTimerMax = 1.0;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Combat")
 	float AttackRadius = 200.f;
 	
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	float DeathLifeSpan = 5.f;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	TSubclassOf<ASoul> SoulClass;
 };
+	

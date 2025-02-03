@@ -4,6 +4,7 @@
 #include "BaseCharacter.h"
 #include "InputActionValue.h"
 #include "CharacterStates.h"
+#include "Interfaces/PickupInterface.h"
 #include "MainCharacter.generated.h"
 
 class USpringArmComponent;
@@ -11,11 +12,12 @@ class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
 class AItem;
+class ASoul;
 class UAnimMontage;
 class UHUDOverlay;
 
 UCLASS()
-class BOUNDLESSREALMS_API AMainCharacter : public ABaseCharacter
+class BOUNDLESSREALMS_API AMainCharacter : public ABaseCharacter, public IPickupInterface
 {
 	GENERATED_BODY()
 
@@ -30,23 +32,26 @@ public:
 
 	// <ACharacter>
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	virtual void Jump() override;
 	// </ACharacter>
 
 	// <IHitInterface>
 	virtual void GetHit(const FVector& HitLocation, AActor* Hitter) override;
 	// </IHitInterface>
 
+	// <IPickupInterface>
+	virtual void SetOverlappingItem(AItem* Item) override;
+	virtual void AddSouls(ASoul* Soul) override;
+	virtual void AddGold(ATreasure* Treasure) override;
+	// </IPickupInterface>
+
 	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
 	FORCEINLINE EActionState GetActionState() const { return ActionState; }
 	FORCEINLINE TEnumAsByte<EDeathState> GetDeathState() const { return DeathState; }
-	FORCEINLINE void SetOverlappingItem(AItem* Item) { OverlappingItem = Item; }
 
 protected:
 
 	// <AActor>
 	virtual void BeginPlay() override;
-
 	// </AActor>
 
 	// <ABaseCharacter>
@@ -68,6 +73,9 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void HitReactionEnd();
 
+	UFUNCTION(BlueprintCallable)
+	void DodgeEnd();
+
 	UPROPERTY(BlueprintReadWrite)
 	EActionState ActionState = EActionState::EAS_Unoccupied;
 
@@ -78,12 +86,21 @@ private:
 	void AddMainMappingContext(APlayerController* PlayerController);
 	void InitializeHUDOverlay(APlayerController* PlayerController);
 
+	// Set HUD
 	void SetHUDHealth();
+	void SetHUDStamina();
 
 	// Input
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+	void Dodge();
+	void PlayDodgeAnimMontage();
 	void EKeyPressed();
+
+	// Stamina
+	bool HasEnoughStamina();
+	bool IsStaminaBarFull();
+	void RegenStamina(float DeltaTime);
 
 	// Weapon Equipping
 	bool CanEquip();
@@ -106,7 +123,7 @@ private:
 	UInputAction* LookAction;
 
 	UPROPERTY(EditAnywhere, Category = Input)
-	UInputAction* JumpAction;
+	UInputAction* DodgeAction;
 
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* EKeyAction;
@@ -125,6 +142,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = Montages)
 	UAnimMontage* EquipUnequipMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = Montages)
+	UAnimMontage* DodgeMontage;
 
 	UPROPERTY()
 	UHUDOverlay* HUDOverlay;

@@ -2,6 +2,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/AttributeComponent.h"
 #include "Items/Weapons/Weapon.h"
+#include "Items/Soul.h"
 #include "HUD/HealthBarComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "AIController.h"	
@@ -129,7 +130,8 @@ void AEnemy::Death()
 	DisableWeaponCollision();
 	SetLifeSpan(DeathLifeSpan);
 	HideHealthBar();
-	GetCharacterMovement()->bOrientRotationToMovement = false;
+	DisableOrientRotationToMovement();
+	SpawnSoul();
 }
 
 bool AEnemy::InTargetRange(AActor* Target, double Radius)
@@ -193,7 +195,7 @@ void AEnemy::SpawnDefaultWeapon()
 	if (World && WeaponClass)
 	{
 		AWeapon* Weapon = World->SpawnActor<AWeapon>(WeaponClass);
-		Weapon->Equip(GetMesh(), FName("RightHandSocket"), this, this);
+		Weapon->Equip(GetMesh(), FName("WeaponSocket"), this, this);
 		CurrentWeapon = Weapon;
 	}
 }
@@ -241,6 +243,7 @@ void AEnemy::StartChasing()
 	EnemyState = EEnemyState::EES_Chasing;
 
 	GetCharacterMovement()->MaxWalkSpeed = ChaseSpeed;
+	SetHealthBarPercent();
 	ShowHealthBar();
 	MoveToTarget(CombatTarget);
 	ClearPatrolTimer();
@@ -277,7 +280,7 @@ void AEnemy::HideHealthBar()
 
 void AEnemy::SetHealthBarPercent()
 {
-	if (HealthBarWidget)
+	if (HealthBarWidget && Attributes)
 	{
 		HealthBarWidget->SetHealthPercent(Attributes->GetHealthPercent());
 	}
@@ -326,6 +329,23 @@ void AEnemy::ClearPatrolTimer()
 void AEnemy::ClearAttackTimer()
 {
 	GetWorldTimerManager().ClearTimer(AttackTimer);
+}
+
+void AEnemy::DisableOrientRotationToMovement()
+{
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+}
+
+void AEnemy::SpawnSoul()
+{
+	UWorld* World = GetWorld();
+	if (World && SoulClass && Attributes)
+	{
+		if (ASoul* SpawnedSoul = World->SpawnActor<ASoul>(SoulClass, GetActorLocation(), GetActorRotation()))
+		{
+			SpawnedSoul->SetSoulValue(Attributes->GetSouls());
+		}
+	}
 }
 
 void AEnemy::PawnSeen(APawn* SeenPawn)

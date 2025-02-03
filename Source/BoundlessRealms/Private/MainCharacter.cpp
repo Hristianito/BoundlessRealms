@@ -13,6 +13,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "Items/Item.h"
 #include "Items/Weapons/Weapon.h"
+#include "Items/Soul.h"
+#include "Items/Treasure.h"
 #include "Animation/AnimMontage.h"
 
 AMainCharacter::AMainCharacter()
@@ -38,11 +40,16 @@ AMainCharacter::AMainCharacter()
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm);
+
+	Attributes->Stamina = 100.f;
+	Attributes->MaxStamina = 100.f;
 }
 
 void AMainCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	RegenStamina(DeltaTime);
 }
 
 float AMainCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -61,17 +68,9 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	{
 		EnhancedInputComponent->BindAction(MovementAction, ETriggerEvent::Triggered, this, &AMainCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMainCharacter::Look);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &AMainCharacter::Jump);
+		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Triggered, this, &AMainCharacter::Dodge);
 		EnhancedInputComponent->BindAction(EKeyAction, ETriggerEvent::Triggered, this, &AMainCharacter::EKeyPressed);
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &AMainCharacter::Attack);
-	}
-}
-
-void AMainCharacter::Jump()
-{
-	if (IsUnoccupied())
-	{
-		Super::Jump();
 	}
 }
 
@@ -85,6 +84,29 @@ void AMainCharacter::GetHit(const FVector& HitLocation, AActor* Hitter)
 	Super::GetHit(HitLocation, Hitter);
 
 	if (IsAlive()) ActionState = EActionState::EAS_Hit;
+}
+
+void AMainCharacter::SetOverlappingItem(AItem* Item)
+{
+	OverlappingItem = Item;
+}
+
+void AMainCharacter::AddSouls(ASoul* Soul)
+{	
+	if (Attributes && HUDOverlay)
+	{
+		Attributes->AddSouls(Soul->GetSoulValue());
+		HUDOverlay->SetTextSouls(Attributes->GetSouls());
+	}
+}
+
+void AMainCharacter::AddGold(ATreasure* Treasure)
+{
+	if (Attributes && HUDOverlay)
+	{
+		Attributes->AddGold(Treasure->GetGoldValue());
+		HUDOverlay->SetTextCoins(Attributes->GetGold());
+	}
 }
 
 void AMainCharacter::BeginPlay()
@@ -158,6 +180,11 @@ void AMainCharacter::HitReactionEnd()
 	ActionState = EActionState::EAS_Unoccupied;
 }
 
+void AMainCharacter::DodgeEnd()
+{
+	ActionState = EActionState::EAS_Unoccupied;
+}
+
 void AMainCharacter::Move(const FInputActionValue& Value)
 {
 	if (ActionState == EActionState::EAS_Unoccupied) 
@@ -201,7 +228,7 @@ void AMainCharacter::InitializeHUDOverlay(APlayerController* PlayerController)
 		if (HUDOverlay && Attributes)
 		{
 			HUDOverlay->SetHealthPercent(Attributes->GetHealthPercent());
-			HUDOverlay->SetStaminaPercent(1.f);
+			HUDOverlay->SetStaminaPercent(Attributes->GetStaminaPercent());
 			HUDOverlay->SetTextCoins(0);
 			HUDOverlay->SetTextSouls(0);
 		}
@@ -216,6 +243,14 @@ void AMainCharacter::SetHUDHealth()
 	}
 }
 
+void AMainCharacter::SetHUDStamina()
+{
+	if (HUDOverlay && Attributes)
+	{
+		HUDOverlay->SetStaminaPercent(Attributes->GetStaminaPercent());
+	}
+}
+
 void AMainCharacter::Look(const FInputActionValue& Value)
 {
 	const FVector2D LookVector = Value.Get<FVector2D>();
@@ -224,18 +259,54 @@ void AMainCharacter::Look(const FInputActionValue& Value)
 	AddControllerYawInput(LookVector.X);
 }
 
+void AMainCharacter::Dodge()
+{
+	if (!IsUnoccupied() || !HasEnoughStamina()) return;
+
+	ActionState = EActionState::EAS_Dodging;
+
+	Attributes->UseStamina(Attributes->DodgeCost);
+	PlayDodgeAnimMontage();
+	SetHUDStamina();
+}
+
+void AMainCharacter::PlayDodgeAnimMontage()
+{
+	if (DodgeMontage)
+	{
+		PlayAnimMontage(DodgeMontage);
+	}
+}
+
 void AMainCharacter::EKeyPressed()
 {
-	// if there is an overlapping weapon - pick it up
 	if (AWeapon* OverlappingWeapon = Cast<AWeapon>(OverlappingItem))
 	{
 		PickUpWeapon(OverlappingWeapon);
 	}
 
-	// if you currently have a weapon - equip/unequip it
 	else if (CurrentWeapon)
 	{
 		EquipUnequip();
+	}
+}
+
+bool AMainCharacter::HasEnoughStamina()
+{
+	return Attributes && Attributes->Stamina > Attributes->DodgeCost;
+}
+
+bool AMainCharacter::IsStaminaBarFull()
+{
+	return Attributes && Attributes->GetStaminaPercent() == 1.f;
+}
+
+void AMainCharacter::RegenStamina(float DeltaTime)
+{
+	if (!IsStaminaBarFull() && HUDOverlay)
+	{
+		Attributes->RegenStamina(DeltaTime);
+		HUDOverlay->SetStaminaPercent(Attributes->GetStaminaPercent());
 	}
 }
 
