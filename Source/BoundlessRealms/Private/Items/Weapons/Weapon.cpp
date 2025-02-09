@@ -143,6 +143,10 @@ void AWeapon::BoxTrace(FHitResult& HitResult)
 		HitResult,
 		true);
 
+	if (HitResult.GetActor()) UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *HitResult.GetActor()->GetName());
+
+	if (HitResult.GetComponent()) UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *HitResult.GetComponent()->GetName());
+
 	UE_LOG(LogTemp, Warning, TEXT("Hit!"));
 
 	IgnoreActors.AddUnique(HitResult.GetActor());

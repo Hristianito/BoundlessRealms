@@ -75,6 +75,7 @@ void AEnemy::GetHit(const FVector& HitLocation, AActor* Hitter)
 	ClearPatrolTimer();
 	ClearAttackTimer();
 	StopAttackMontage();
+	if (IsInsideAttackRadius()) if (!IsDead()) StartAttacking();
 }
 
 void AEnemy::BeginPlay()
@@ -132,6 +133,7 @@ void AEnemy::Death()
 	HideHealthBar();
 	DisableOrientRotationToMovement();
 	SpawnSoul();
+	Ragdoll();
 }
 
 bool AEnemy::InTargetRange(AActor* Target, double Radius)
@@ -292,7 +294,7 @@ void AEnemy::MoveToTarget(AActor* Target)
 	{
 		FAIMoveRequest MoveRequest;
 		MoveRequest.SetGoalActor(Target);
-		MoveRequest.SetAcceptanceRadius(50.f);
+		MoveRequest.SetAcceptanceRadius(AcceptanceRadius);
 		EnemyController->MoveTo(MoveRequest);
 	}
 }
@@ -341,10 +343,21 @@ void AEnemy::SpawnSoul()
 	UWorld* World = GetWorld();
 	if (World && SoulClass && Attributes)
 	{
-		if (ASoul* SpawnedSoul = World->SpawnActor<ASoul>(SoulClass, GetActorLocation(), GetActorRotation()))
+		const FVector SpawnLocation = GetActorLocation() + FVector(0.f, 0.f, 100.f);
+		if (ASoul* SpawnedSoul = World->SpawnActor<ASoul>(SoulClass, SpawnLocation, GetActorRotation()))
 		{
 			SpawnedSoul->SetSoulValue(Attributes->GetSouls());
+			SpawnedSoul->SetOwner(this);
 		}
+	}
+}
+
+void AEnemy::Ragdoll()
+{
+	if (bShouldRagdoll)
+	{
+		GetMesh()->SetSimulatePhysics(true);
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	}
 }
 

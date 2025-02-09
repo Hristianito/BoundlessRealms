@@ -77,6 +77,7 @@ private:
 	void ClearAttackTimer();
 	void DisableOrientRotationToMovement();
 	void SpawnSoul();
+	void Ragdoll();
 
 	UFUNCTION()
 	void PawnSeen(APawn* SeenPawn);
@@ -129,7 +130,13 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	float AttackRadius = 200.f;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float AcceptanceRadius = 50.f;
 	
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	bool bShouldRagdoll = false;
+
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	float DeathLifeSpan = 5.f;
 
