@@ -39,7 +39,6 @@ protected:
 	virtual void Attack();
 	virtual void ReceiveDamage(const float Damage);
 	virtual void Death();
-	void DirectionalHitReact(AActor* Hitter);
 
 	UFUNCTION(BlueprintCallable)
 	virtual void AttackEnd();
@@ -49,8 +48,8 @@ protected:
 
 	// Montages
 	virtual int32 PlayAttackMontage();
-	virtual int32 PlayDeathMontage();
 	void PlayHitReactionMontage(const FName& SectionName);
+	void PlayDeathReactionMontage(const FName& SectionName);
 	void StopAttackMontage();
 
 	UFUNCTION(BlueprintCallable)
@@ -85,10 +84,13 @@ protected:
 
 private:
 
-	// Directional Hit
+	// Directional Hit And Death
+	void DirectionalHitReact(AActor* Hitter);
 	double CalculateHitAngle(const FVector& HitLocation);
 	FName ChooseHitMontageSection(double& Angle);
 	FName SelectHitMontageSection(AActor* Hitter);
+	void DirectionalDeathReact(AActor* Hitter);
+	EDeathState ChooseDeathState(const FName& HitDirection);
 
 	// Montages
 	void PlaySectionFromMontage(UAnimMontage* Montage, const FName& SectionName);
@@ -105,9 +107,6 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Montages")
 	TArray<FName> AttackMontageSections;
-
-	UPROPERTY(EditAnywhere, Category = "Montages")
-	TArray<FName> DeathMontageSections;
 
 	UPROPERTY(EditAnywhere, Category = "Sounds")
 	USoundBase* HitSound;

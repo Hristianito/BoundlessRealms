@@ -31,11 +31,18 @@ protected:
 
 private: 
 
+	void LineTrace(const FVector& Start, const FVector& End, TArray<TEnumAsByte<EObjectTypeQuery>>& ObjectTypes, TArray<AActor*, FDefaultAllocator>& ActorsToIgnore, FHitResult& HitResult);
+	void MoveSoul(float DeltaTime);
+
 	UPROPERTY(EditAnywhere, Category = "Soul Properties")
 	int32 SoulValue;
 
 	UPROPERTY(EditAnywhere, Category = "Soul Properties")
 	float DriftRate = 15.f;
 
+	UPROPERTY(EditAnywhere, Category = "Soul Properties")
+	bool bShowLineDebug = false;
+
+	UPROPERTY()
 	double DesiredZ;
 };	

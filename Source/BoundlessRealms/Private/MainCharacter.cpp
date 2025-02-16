@@ -1,12 +1,14 @@
 #include "MainCharacter.h"	
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/Pawn.h"
 #include "Camera/CameraComponent.h"
 #include "HUD/GameHUD.h"
 #include "HUD/HUDOverlay.h"
 #include "Components/InputComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/AttributeComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "InputMappingContext.h"
 #include "InputAction.h"
 #include "EnhancedInputComponent.h"
@@ -148,10 +150,9 @@ void AMainCharacter::Death()
 	Super::Death();
 
 	ActionState = EActionState::EAS_Dead;
+	bIsCameraLocked = true;
 
 	DisableMeshCollision();
-	DisableCapsuleCollision();
-	DisableWeaponCollision();
 }
 
 void AMainCharacter::AttachWeaponToHand()
@@ -183,6 +184,7 @@ void AMainCharacter::HitReactionEnd()
 void AMainCharacter::DodgeEnd()
 {
 	ActionState = EActionState::EAS_Unoccupied;
+	SetMovementModeToWalking();
 }
 
 void AMainCharacter::Move(const FInputActionValue& Value)
@@ -253,6 +255,8 @@ void AMainCharacter::SetHUDStamina()
 
 void AMainCharacter::Look(const FInputActionValue& Value)
 {
+	if (bIsCameraLocked) return;
+
 	const FVector2D LookVector = Value.Get<FVector2D>();
 
 	AddControllerPitchInput(LookVector.Y);
@@ -266,8 +270,19 @@ void AMainCharacter::Dodge()
 	ActionState = EActionState::EAS_Dodging;
 
 	Attributes->UseStamina(Attributes->DodgeCost);
-	PlayDodgeAnimMontage();
+	SetMovementModeToFlying();
+	PlayDodgeAnimMontage();	
 	SetHUDStamina();
+}
+
+void AMainCharacter::SetMovementModeToFlying()
+{
+	GetCharacterMovement()->SetMovementMode(MOVE_Flying);
+}
+
+void AMainCharacter::SetMovementModeToWalking()
+{
+	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 }
 
 void AMainCharacter::PlayDodgeAnimMontage()

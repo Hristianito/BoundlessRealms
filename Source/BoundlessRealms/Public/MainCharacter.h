@@ -97,6 +97,10 @@ private:
 	void PlayDodgeAnimMontage();
 	void EKeyPressed();
 
+	// SetMovementMode
+	void SetMovementModeToFlying();
+	void SetMovementModeToWalking();
+
 	// Stamina
 	bool HasEnoughStamina();
 	bool IsStaminaBarFull();
@@ -150,4 +154,5 @@ private:
 	UHUDOverlay* HUDOverlay;
 	ECharacterState CharacterState = ECharacterState::ECS_Unequipped;
 
+	bool bIsCameraLocked = false;
 };

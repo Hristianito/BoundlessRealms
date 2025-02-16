@@ -127,8 +127,6 @@ void AEnemy::Death()
 	EnemyState = EEnemyState::EES_Dead;
 
 	ClearAttackTimer();
-	DisableCapsuleCollision();
-	DisableWeaponCollision();
 	SetLifeSpan(DeathLifeSpan);
 	HideHealthBar();
 	DisableOrientRotationToMovement();

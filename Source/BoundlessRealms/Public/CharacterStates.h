@@ -21,9 +21,10 @@ enum class EActionState : uint8
 UENUM(BlueprintType)
 enum EDeathState
 {
-	EDS_Death1 UMETA(DisplayName = "Death1"),
-	EDS_Death2 UMETA(DisplayName = "Death2"),
-	EDS_Death3 UMETA(DisplayName = "Death3"),
+	EDS_DeathFromFront UMETA(DisplayName = "DeathFromFront"),
+	EDS_DeathFromBack UMETA(DisplayName = "DeathFromBack"),
+	EDS_DeathFromLeft UMETA(DisplayName = "DeathFromLeft"),
+	EDS_DeathFromRight UMETA(DisplayName = "DeathFromRight"),
 
 	EDS_MAX UMETA(DisplayName = "DefaultMAX")
 };

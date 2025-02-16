@@ -4,6 +4,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/AttributeComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "BoundlessRealms/DebugMacros.h"
 
@@ -26,7 +27,7 @@ void ABaseCharacter::Tick(float DeltaTime)
 void ABaseCharacter::GetHit(const FVector& HitLocation, AActor* Hitter)
 {
 	if (IsAlive()) DirectionalHitReact(Hitter);
-	else if (!IsAlive()) Death();
+	else if (!IsAlive()) DirectionalDeathReact(Hitter);
 
 	SetWeaponCollision(ECollisionEnabled::NoCollision);
 	PlayHitSound(HitLocation);
@@ -66,14 +67,22 @@ void ABaseCharacter::ReceiveDamage(const float Damage)
 
 void ABaseCharacter::Death()
 {
-	PlayDeathMontage();
-
 	Tags.Add(FName("Dead"));
+
+	DisableCapsuleCollision();
+	DisableWeaponCollision();
 }
 
 void ABaseCharacter::DirectionalHitReact(AActor* Hitter)
 {
 	PlayHitReactionMontage(SelectHitMontageSection(Hitter));
+}
+
+void ABaseCharacter::DirectionalDeathReact(AActor* Hitter)
+{
+	PlayDeathReactionMontage(SelectHitMontageSection(Hitter));
+
+	Death();
 }
 
 void ABaseCharacter::AttackEnd()
@@ -95,19 +104,20 @@ int32 ABaseCharacter::PlayAttackMontage()
 	return PlayRandomSectionFromMontage(AttackMontage, AttackMontageSections);
 }
 
-int32 ABaseCharacter::PlayDeathMontage()
-{
-	const int32 Selection = PlayRandomSectionFromMontage(DeathMontage, DeathMontageSections);
-	TEnumAsByte<EDeathState> State(Selection);
-
-	if (State < EDeathState::EDS_MAX) DeathState = State;
-
-	return Selection;
-}
-
 void ABaseCharacter::PlayHitReactionMontage(const FName& SectionName)
 {
 	PlaySectionFromMontage(HitReactionMontage, SectionName);
+
+	//UE_LOG(LogTemp, Warning, TEXT("%s"), *SectionName.ToString());
+}
+
+void ABaseCharacter::PlayDeathReactionMontage(const FName& SectionName)
+{
+	PlaySectionFromMontage(DeathMontage, SectionName);
+
+	DeathState = ChooseDeathState(SectionName);
+
+	//UE_LOG(LogTemp, Warning, TEXT("%s"), *SectionName.ToString());
 }
 
 void ABaseCharacter::StopAttackMontage()
@@ -206,6 +216,15 @@ FName ABaseCharacter::SelectHitMontageSection(AActor* Hitter)
 	double Angle = CalculateHitAngle(Hitter->GetActorLocation());
 
 	return ChooseHitMontageSection(Angle);
+}
+
+EDeathState ABaseCharacter::ChooseDeathState(const FName& HitDirection)
+{
+	if (HitDirection == "HitFromFront") return EDS_DeathFromFront;
+	else if (HitDirection == "HitFromLeft") return EDS_DeathFromLeft;
+	else if (HitDirection == "HitFromBack") return EDS_DeathFromBack;
+	else if (HitDirection == "HitFromRight") return EDS_DeathFromRight;
+	else return EDS_DeathFromBack;
 }
 
 void ABaseCharacter::PlaySectionFromMontage(UAnimMontage* Montage, const FName& SectionName)

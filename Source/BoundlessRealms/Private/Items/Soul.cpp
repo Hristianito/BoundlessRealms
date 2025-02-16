@@ -6,12 +6,7 @@ void ASoul::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	const double LocationZ = GetActorLocation().Z;
-	if (LocationZ > DesiredZ)
-	{
-		const FVector DeltaLocation = FVector(0.f, 0.f, DriftRate * DeltaTime);
-		AddActorWorldOffset(DeltaLocation);
-	}
+	MoveSoul(DeltaTime);
 }
 
 void ASoul::BeginPlay()
@@ -29,17 +24,8 @@ void ASoul::BeginPlay()
 
 	FHitResult HitResult;
 
-	UKismetSystemLibrary::LineTraceSingleForObjects(
-		this,
-		Start,
-		End,
-		ObjectTypes,
-		false,
-		ActorsToIgnore,
-		EDrawDebugTrace::ForDuration,
-		HitResult,
-		true
-	);
+	LineTrace(Start, End, ObjectTypes, ActorsToIgnore, HitResult);
+
 	DesiredZ = HitResult.ImpactPoint.Z + 50.f;
 }
 
@@ -52,5 +38,30 @@ void ASoul::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Ot
 		SpawnPickupEffect();
 		SpawnPickupSound();
 		Destroy();
+	}
+}
+
+void ASoul::LineTrace(const FVector& Start, const FVector& End, TArray<TEnumAsByte<EObjectTypeQuery>>& ObjectTypes, TArray<AActor*, FDefaultAllocator>& ActorsToIgnore, FHitResult& HitResult)
+{
+	UKismetSystemLibrary::LineTraceSingleForObjects(
+		this,
+		Start,
+		End,
+		ObjectTypes,
+		false,
+		ActorsToIgnore,
+		bShowLineDebug ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None,
+		HitResult,
+		true
+	);
+}
+
+void ASoul::MoveSoul(float DeltaTime)
+{
+	const double LocationZ = GetActorLocation().Z;
+	if (LocationZ > DesiredZ)
+	{
+		const FVector DeltaLocation = FVector(0.f, 0.f, DriftRate * DeltaTime);
+		AddActorWorldOffset(DeltaLocation);
 	}
 }
