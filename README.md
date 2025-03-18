@@ -23,13 +23,14 @@ Build Instructions
 Open Unreal Engine 5 and load the project.
 Configure project settings for your target platform.
 Click "Build" and then "Play" to test.
+
 Controls
-Action	Keybind
-Move	WASD
-Attack	Left Click
-Dodge	Spacebar
-Interact	E
-Pause	Esc
+Move - WASD
+Attack - Left Click
+Dodge - Spacebar
+Interact - E
+Pause - Esc
+Change Worlds - Tab
 
 Contact & Support
 📧 Email: realmsboundless@gmail.com
