@@ -9,11 +9,12 @@ Features
 🌍 Expansive Open World – Discover lush forests, forgotten ruins, and hidden pathways.
 🏹 Deep Character Progression – Customize your playstyle with unique abilities and gear.
 🎭 Engaging Lore & Mysteries – Unravel the history of the world through environmental storytelling.
+
 Installation
 Clone the repository:
 bash
 Copy code
-git clone https://github.com/yourusername/BoundlessRealms.git
+git clone https://github.com/Hristianito/BoundlessRealms.git
 cd BoundlessRealms
 Open in Unreal Engine 5:
 Ensure you have Unreal Engine 5 installed.
@@ -29,17 +30,7 @@ Attack	Left Click
 Dodge	Spacebar
 Interact	E
 Pause	Esc
-Contributing
-We welcome contributions! To contribute:
-
-Fork the repository.
-Create a new branch: git checkout -b feature-name
-Commit changes: git commit -m "Add new feature"
-Push to the branch: git push origin feature-name
-Open a Pull Request for review.
-
 
 Contact & Support
-📧 Email: your-email@example.com
-💬 Discord: Join our community
-🔗 Website: your-website.com
+📧 Email: realmsboundless@gmail.com
+🔗 Website: https://v0-boundless-realms-website.vercel.app
